@@ -1,0 +1,9 @@
+// XangMod - XangModGame.uci (facade)
+// Splits into Game/. Order matters: Vars.uci first (vars must precede functions), the file carrying DefaultProperties last.
+
+`include(XangMod/Include/Game/Vars.uci)
+`include(XangMod/Include/XangModCompForestSpawnControl.uci)
+`include(XangMod/Include/Game/Match.uci)
+`include(XangMod/Include/Game/RoundReporting.uci)
+`include(XangMod/Include/Game/SiegeObjects.uci)
+`include(XangMod/Include/Game/Server.uci)

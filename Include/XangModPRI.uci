@@ -1,0 +1,211 @@
+var string OriginalName;
+var bool bXangModPacketLossAboveThreshold;
+var bool bXangModPacketLossReconnectIssued;
+var float fXangModPacketLossAboveSince;
+var int AllDamageTaken,
+        RealTeamDamageDealt,
+        TeamDamageTaken,
+        EnemyStaminaDamageDealt,
+        TeamStaminaDamageDealt,
+        EnemyStaminaDamageTaken,
+        TeamStaminaDamageTaken,
+        HealthRegenerated,
+        Feints,
+        MeleeHits,
+        ProjectileHits,
+        LightShoveHits,
+        HeavyShoveHits,
+        Parries,
+        Blocks,
+        Crouches,
+        Jumps,
+        Dodges,
+        Chatter;
+var float AllStaminaConsumed,
+          StaminaRegenerated;
+
+
+replication
+{
+    if (bNetDirty && bNetOwner)
+        AllDamageTaken, AllStaminaConsumed, TeamDamageTaken, EnemyStaminaDamageDealt, TeamStaminaDamageDealt, EnemyStaminaDamageTaken, TeamStaminaDamageTaken,
+        HealthRegenerated, StaminaRegenerated,
+        Feints, MeleeHits, ProjectileHits, LightShoveHits, HeavyShoveHits,
+        Parries, Blocks,
+        Crouches, Jumps, Dodges,
+        Chatter;
+}
+
+// Ask humans whose server-reported packet loss stays above the player-list threshold to
+// reconnect instead of kicking them to the server browser. Sample the raw server metric here
+// rather than using PacketLossMax: that value is a client-side rolling maximum, so a single
+// transient spike would otherwise remain kick-worthy for a while.
+simulated event Tick(float DeltaTime)
+{
+    local `{GAMEMODE}PlayerController PacketLossPC;
+
+    super.Tick(DeltaTime);
+
+    if (Role != ROLE_Authority || bIsBot || bXangModPacketLossReconnectIssued)
+        return;
+
+    if (PacketLoss <= 25.0)
+    {
+        bXangModPacketLossAboveThreshold = false;
+        fXangModPacketLossAboveSince = 0.0;
+        return;
+    }
+
+    if (!bXangModPacketLossAboveThreshold)
+    {
+        bXangModPacketLossAboveThreshold = true;
+        fXangModPacketLossAboveSince = WorldInfo.TimeSeconds;
+        return;
+    }
+
+    // Give short loss bursts time to recover; this is a reconnect, not a ban.
+    if (WorldInfo.TimeSeconds - fXangModPacketLossAboveSince < 5.0)
+        return;
+
+    PacketLossPC = `{GAMEMODE}PlayerController(OwnerController);
+    if (PacketLossPC == none)
+        return;
+
+    bXangModPacketLossReconnectIssued = true;
+    PacketLossPC.ClientReconnectDueToPacketLoss();
+}
+
+
+function PreSeamlessTravelReset()
+{
+    super.PreSeamlessTravelReset();
+
+    AllDamageTaken = 0;
+    RealTeamDamageDealt = 0;
+    AllStaminaConsumed = 0;
+    TeamDamageTaken = 0;
+    EnemyStaminaDamageDealt = 0;
+    TeamStaminaDamageDealt = 0;
+    EnemyStaminaDamageTaken = 0;
+    TeamStaminaDamageTaken = 0;
+    HealthRegenerated = 0;
+    StaminaRegenerated = 0;
+    Feints = 0;
+    MeleeHits = 0;
+    ProjectileHits = 0;
+    LightShoveHits = 0;
+    HeavyShoveHits = 0;
+    Parries = 0;
+    Blocks = 0;
+    Crouches = 0;
+    Jumps = 0;
+    Dodges = 0;
+    Chatter = 0;
+}
+
+function CopyProperties(PlayerReplicationInfo PRI)
+{
+    super.CopyProperties(PRI);
+
+    AOCPRI(PRI).bAdmin = bAdmin;
+
+    `{GAMEMODE}PRI(PRI).AllDamageTaken = AllDamageTaken;
+    `{GAMEMODE}PRI(PRI).RealTeamDamageDealt = RealTeamDamageDealt;
+    `{GAMEMODE}PRI(PRI).AllStaminaConsumed = AllStaminaConsumed;
+    `{GAMEMODE}PRI(PRI).TeamDamageTaken = TeamDamageTaken;
+    `{GAMEMODE}PRI(PRI).EnemyStaminaDamageDealt = EnemyStaminaDamageDealt;
+    `{GAMEMODE}PRI(PRI).TeamStaminaDamageDealt = TeamStaminaDamageDealt;
+    `{GAMEMODE}PRI(PRI).EnemyStaminaDamageTaken = EnemyStaminaDamageTaken;
+    `{GAMEMODE}PRI(PRI).TeamStaminaDamageTaken = TeamStaminaDamageTaken;
+    `{GAMEMODE}PRI(PRI).HealthRegenerated = HealthRegenerated;
+    `{GAMEMODE}PRI(PRI).StaminaRegenerated = StaminaRegenerated;
+    `{GAMEMODE}PRI(PRI).Feints = Feints;
+    `{GAMEMODE}PRI(PRI).MeleeHits = MeleeHits;
+    `{GAMEMODE}PRI(PRI).ProjectileHits = ProjectileHits;
+    `{GAMEMODE}PRI(PRI).LightShoveHits = LightShoveHits;
+    `{GAMEMODE}PRI(PRI).HeavyShoveHits = HeavyShoveHits;
+    `{GAMEMODE}PRI(PRI).Parries = Parries;
+    `{GAMEMODE}PRI(PRI).Blocks = Blocks;
+    `{GAMEMODE}PRI(PRI).Crouches = Crouches;
+    `{GAMEMODE}PRI(PRI).Jumps = Jumps;
+    `{GAMEMODE}PRI(PRI).Dodges = Dodges;
+    `{GAMEMODE}PRI(PRI).Chatter = Chatter;
+
+    /*
+        Preserve the original name which the player joined with.
+
+        Why this is not done in a single line using either:
+
+            - A dynamic cast for the current gamemode: `{GAMEMODE}PRI(PRI)...
+                This fails because the current gamemode is not always the one we are transitioning to.
+
+            - A common parent: XangModPRI(PRI)...
+                This is preferably avoided since one must exclude the AOC leaf classes from the new class's heritage.
+
+        Isn't that epic?
+     */
+    XangModAOCDuelPRI(PRI).OriginalName = OriginalName;
+    XangModCDWDuelPRI(PRI).OriginalName = OriginalName;
+    XangModCTFPRI(PRI).OriginalName = OriginalName;
+    XangModFFAPRI(PRI).OriginalName = OriginalName;
+    XangModKOTHPRI(PRI).OriginalName = OriginalName;
+    XangModLTSPRI(PRI).OriginalName = OriginalName;
+    XangModTDPRI(PRI).OriginalName = OriginalName;
+    XangModTOPRI(PRI).OriginalName = OriginalName;
+    XangModTUTPRI(PRI).OriginalName = OriginalName;
+}
+
+
+function SaveOriginalName()
+{
+    if (OriginalName == "")
+        OriginalName = PlayerName;
+}
+
+// XANGMOD: Never count a death that happens during tournament-mode warmup (the pre-round
+// before the round starts / before !adminreadyall). Team-kill deaths in that window are what
+// pollute the tracked deaths stat that RCON consumers like heir.gg report. Vanilla's Killed()
+// (AOCGame.uc) and AOCDuel.Killed() call PRI.IncrementDeaths() unconditionally; blocking it
+// here keeps warmup deaths out of the stat stream without touching the precompiled AOC package.
+function IncrementDeaths(optional int Amt = 1)
+{
+	local AOCGame G;
+
+	G = AOCGame(WorldInfo.Game);
+	if (G != none && G.bTournamentMode && G.IsInState('AOCPreRound'))
+		return;
+
+	Deaths += Amt;
+}
+
+// XANGMOD: Zero every counter the RCON round stat burst (opcode 67) reports. Called once per
+// map when round 1 starts, so the burst covers the match and nothing from the pre-round.
+// The hit counters are bumped in ProcessResolvedAttack before TakeDamage runs, so a swing
+// that lands on an invulnerable pre-round player still counts unless it is cleared here.
+// AOCPlayerController.TeamDamageDealt (the team damage penalty) is deliberately left alone.
+function XangModResetRoundStats()
+{
+    NumKills = 0;
+    Deaths = 0;
+    NumAssists = 0;
+    Score = 0;
+    EnemyDamageDealt = 0;
+    TeamDamageDealt = 0;
+
+    AllDamageTaken = 0;
+    RealTeamDamageDealt = 0;
+    Parries = 0;
+    Feints = 0;
+    MeleeHits = 0;
+    ProjectileHits = 0;
+    Blocks = 0;
+    Dodges = 0;
+
+    bForceNetUpdate = true;
+}
+
+function RestoreOriginalName()
+{
+    if (OriginalName != "" && OriginalName != PlayerName)
+        SetPlayerName(OriginalName);
+}

@@ -1,0 +1,30 @@
+class XangModTO extends AOCTeamObjective;
+
+// CE Autoskip: when enabled by admin, fires "ce skip" when objective timer reaches 5 seconds
+var bool bCEAutoskipEnabled;
+var bool bCEAutoskipFired;
+
+// CompForest: automatically fires "ce skip" to advance past objective 1 when the in-game
+// timer hits the 1-minute-remaining mark and objective 1 hasn't been completed yet.
+var bool bCECompForestAutoskipFired;
+
+// Stage index skipped by AdminSkipObjective; its bonus time is zeroed when the map advances. -1 = none.
+var int XangModSkipStage;
+
+// Bot King (XangModAIKing maps); the flag mutes vanilla's King pick for one tick.
+var XangModKingBot XangModAIKingBot;
+var AOCObjective_Assassination XangModKingObj;
+var bool bXangModKingHandoff;
+var int XangModAIKingMode;    // AdminAIKing: 0 = as configured, 1 = on, 2 = off for this match
+
+`include(XangMod/Include/XangModTO.uci)
+`include(XangMod/Include/XangModGame.uci)
+`include(XangMod/Include/XangModTOGamemode.uci)
+`include(XangMod/Include/XangModRankedHooks.uci)
+
+DefaultProperties
+{
+	// Team damage: 0.0 = none, 0.5 = 50% (vanilla), 1.0 = 100%
+	fTeamDamagePercent=0.5
+	XangModSkipStage=-1
+}

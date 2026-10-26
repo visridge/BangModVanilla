@@ -1,0 +1,504 @@
+// SlumpMod Team Objective gamemode-specific optimizations
+// This file is ONLY included by XangModTO.uc (the gamemode class)
+
+// Trigger a Kismet SeqEvent_Console by name (equivalent to "ce <EventName>" from PlayerController)
+// GameInfo can't use ConsoleCommand("ce ...") because "ce" is an exec function on PlayerController.
+function TriggerConsoleEvent(name EventName)
+{
+    local array<SequenceObject> AllConsoleEvents;
+    local SeqEvent_Console ConsoleEvt;
+    local Sequence GameSeq;
+    local int Idx;
+
+    GameSeq = WorldInfo.GetGameSequence();
+    if (GameSeq != None && EventName != '')
+    {
+        GameSeq.FindSeqObjectsByClass(class'SeqEvent_Console', true, AllConsoleEvents);
+        for (Idx = 0; Idx < AllConsoleEvents.Length; Idx++)
+        {
+            ConsoleEvt = SeqEvent_Console(AllConsoleEvents[Idx]);
+            if (ConsoleEvt != None && EventName == ConsoleEvt.ConsoleEventName)
+            {
+                ConsoleEvt.CheckActivate(self, self);
+            }
+        }
+    }
+}
+
+// True when running on CompForest (AOCTO-CompForest_p).
+function bool IsCompForest()
+{
+    return InStr(WorldInfo.GetMapName(), "AOCTO-CompForest_p", false, true) != INDEX_NONE;
+}
+
+/**
+ * Static respawn floor for Team Objective maps.
+ *
+ * Vanilla GetMinimumRespawnTime returns MinimumRespawnTime plus whatever the map's Kismet
+ * "Set minimum spawn time" node (AOCSeqAction_SetMinimumSpawnTime) adds. Custom TO maps
+ * routinely push a negative bonus through that node to shrink respawns (e.g. 10s - 7 = 3s).
+ * Returning a flat value here ignores both the gametype default and any Kismet bonus, so
+ * mid-round respawns stay at a fixed 10s regardless of what the map does. First spawn is
+ * unaffected: AddPlayerToQueue zeroes SpawnTime for firstSpawn after this check runs.
+ */
+function float GetMinimumRespawnTime(Controller PC)
+{
+    return 10.0f;
+}
+
+// Apply [XangMod.XangModObjTimer] overrides; vanilla reads BonusTime inside super.
+function ActivateNextObjectiveStage()
+{
+    local int i, Stage;
+
+    for (i = 0; i < class'XangModObjTimer'.default.Overrides.Length; i++)
+    {
+        Stage = class'XangModObjTimer'.default.Overrides[i].Obj - 1;
+        if (Stage >= 0 && Stage < AllObjectives.Length
+            && class'XangModObjTimer'.default.Overrides[i].Map ~= WorldInfo.GetMapName())
+        {
+            AllObjectives[Stage].BonusTime = class'XangModObjTimer'.default.Overrides[i].Bonus;
+        }
+    }
+
+    if (XangModSkipStage >= 0 && XangModSkipStage == CurrentObjectiveStage)
+        AllObjectives[CurrentObjectiveStage].BonusTime = 0;
+    XangModSkipStage = -1;
+
+    // The map advances by calling this, so the stage still current here is the one that
+    // just ended. The first call (stage -1) only opens stage one and reports nothing.
+    if (CurrentObjectiveStage >= 0)
+        XangModSendObjectiveStage(CurrentObjectiveStage, false);
+
+    super.ActivateNextObjectiveStage();
+}
+
+// Completes every objective in the current stage so the map's own Kismet advances it.
+function bool XangModSkipObjective()
+{
+    local int i;
+    local bool bAny;
+
+    if (!IsInState('AOCRoundInProgress') || CurrentObjectiveStage < 0 || CurrentObjectiveStage >= AllObjectives.Length)
+        return false;
+
+    XangModSkipStage = CurrentObjectiveStage;
+    XangModObjSkipMark = CurrentObjectiveStage + 1;
+    for (i = 0; i < 7; i++)
+    {
+        if (IAOCObjective(AllObjectives[CurrentObjectiveStage].StageObjectives[i]) != none)
+        {
+            IAOCObjective(AllObjectives[CurrentObjectiveStage].StageObjectives[i]).CompleteObjective();
+            bAny = true;
+        }
+    }
+
+    if (!bAny)
+    {
+        XangModSkipStage = -1;
+        XangModObjSkipMark = 0;
+    }
+    return bAny;
+}
+
+// ---- AI King (XangModAIKing maps) ----
+// The map's assassination objective only takes a human King. We hand it any player so it
+// doesn't complete on the spot, then take the slot back next tick and spawn a bot King.
+function XangModKingLog(string S)
+{
+    LogAlwaysInternal("[XangModKing]"@S);
+}
+
+// Letters and digits only, lower case: "King's Garden" and AOCTO-KingsGarden-CM_p both give kingsgarden.
+function string XangModNameKey(string S)
+{
+    local string Out, C;
+    local int i;
+
+    S = Locs(S);
+    for (i = 0; i < Len(S); i++)
+    {
+        C = Mid(S, i, 1);
+        if (InStr("abcdefghijklmnopqrstuvwxyz0123456789", C) != INDEX_NONE)
+            Out $= C;
+    }
+    return Out;
+}
+
+// GetMapName gives the friendly title on some maps, so the package name is checked too.
+// No Maps= in [XangMod.XangModAIKing]: the two stock King maps.
+function bool XangModUsesAIKing()
+{
+    local int i;
+    local string Map, List, Item;
+
+    if (XangModAIKingMode == 2 || (XangModAIKingMode == 0 && class'XangModAIKing'.default.bDisabled))
+        return false;
+    Map = XangModNameKey(WorldInfo.GetMapName()) $ "|" $ XangModNameKey(string(WorldInfo.GetPackageName()));
+    List = class'XangModAIKing'.default.Maps;
+    if (List == "")
+        List = "Stoneshill,KingsGarden";
+    while (List != "")
+    {
+        i = InStr(List, ",");
+        Item = i == INDEX_NONE ? List : Left(List, i);
+        List = i == INDEX_NONE ? "" : Mid(List, i + 1);
+        if (XangModNameKey(Item) != "" && InStr(Map, XangModNameKey(Item)) != INDEX_NONE)
+            return true;
+    }
+    return false;
+}
+
+function AOCPlayerController ChooseHighestScoreController(EAOCFaction Faction, array<int> InvalidSel)
+{
+    local AOCPlayerController PC, Any;
+
+    PC = super.ChooseHighestScoreController(Faction, InvalidSel);
+    XangModKingLog("pick map="$WorldInfo.GetMapName()@"pkg="$WorldInfo.GetPackageName()@"ini maps="$class'XangModAIKing'.default.Maps@"AI="$XangModUsesAIKing()@"human="$PC);
+    if (!XangModUsesAIKing())
+        return PC;
+    if (PC == none)
+    {
+        foreach WorldInfo.AllControllers(class'AOCPlayerController', Any)
+        {
+            PC = Any;
+            break;
+        }
+    }
+    if (PC != none)
+    {
+        bXangModKingHandoff = true;
+        SetTimer(0.01f, false, 'XangModTakeKingSlot');
+    }
+    return PC;
+}
+
+// Undo vanilla's pick (as if they'd rejected), then spawn the bot King.
+function XangModTakeKingSlot()
+{
+    local AOCObjective_Assassination Obj;
+    local AOCTeamObjectivePC PC;
+
+    bXangModKingHandoff = false;
+    foreach AllActors(class'AOCObjective_Assassination', Obj)
+    {
+        XangModKingLog("take"@Obj@"temp="$Obj.TemporaryController@"enabled="$Obj.bIsEnabled@"spawn="$Obj.KingSpawnLocation@"class="$Obj.KingClass);
+        PC = AOCTeamObjectivePC(Obj.TemporaryController);
+        if (PC == none || Obj.bIsEnabled)
+            continue;
+        Obj.ClearTimer('RespawnPawnAsKing');
+        if (Obj.Parent != none)
+            Obj.Parent.RemoveDeathListener(Obj);
+        PC.MyAssassinationObjective = none;
+        PC.bIsKing = false;
+        PC.bSpawnAsKing = false;
+        Obj.Parent = none;
+        Obj.TemporaryController = none;
+        Obj.bForcingKingSelect = false;
+        XangModKingObj = Obj;
+        XangModSpawnAIKing();
+    }
+}
+
+function XangModSpawnAIKing()
+{
+    local XangModKingBot B;
+    local AOCFamilyInfo Fam;
+    local int T;
+
+    if (XangModKingObj == none)
+        return;
+    if (XangModAIKingBot != none)
+        XangModRemoveAIKing(XangModAIKingBot);
+
+    T = XangModKingObj.TeamOwner == EFAC_AGATHA ? 0 : 1;
+    B = Spawn(class'XangModKingBot');
+    XangModKingLog("spawn bot="$B@"team="$T);
+    if (B == none)
+        return;
+    XangModAIKingBot = B;
+
+    // Same bookkeeping as AOCGame.AddAOCBot, so Logout and KillBots balance it.
+    B.PlayerReplicationInfo.PlayerID = GetNextPlayerID();
+    Teams[T].AddToTeam(B);
+    B.myHiveBrain = AIBrain[T];
+    AIBrain[T].AddBot(B);
+    if (T == 0)
+        AOCGRI(GameReplicationInfo).AgathaSize += 1;
+    else
+        AOCGRI(GameReplicationInfo).MasonSize += 1;
+    B.PlayerReplicationInfo.SetPlayerTeam(Teams[T]);
+    ChangeName(B, "The King", true);
+    NumBots++;
+    UpdateGameSettingsCounts();
+
+    // Loadout from AOCTeamObjectivePC.MyPawnIsKing.
+    Fam = AOCGRI(WorldInfo.GRI).GetOrSpawnFamilyInfoFromClass(XangModKingObj.KingClass);
+    XangModKingLog("family="$Fam);
+    if (T == 0)
+        B.SetLoadout(Fam, class'XangModWeapon_DoubleAxe', class'XangModWeapon_Longsword', class'XangModWeapon_WarAxe');
+    else
+        B.SetLoadout(Fam, class'XangModWeapon_Messer', class'XangModWeapon_Maul', class'XangModWeapon_MorningStar');
+    SpawnPlayer(B);
+    SetTimer(3.0f, false, 'XangModCheckAIKing');
+}
+
+// The spawn can fail if the King spawn point is occupied: keep retrying until there's a pawn.
+function XangModCheckAIKing()
+{
+    local XangModKingBot B;
+
+    B = XangModAIKingBot;
+    XangModKingLog("check bot="$B@"pawn="$(B != none ? string(B.Pawn) : "")@"objEnabled="$(XangModKingObj != none ? string(XangModKingObj.bIsEnabled) : "")@"parent="$(XangModKingObj != none ? string(XangModKingObj.Parent) : ""));
+    if (B == none || XangModKingObj == none)
+        return;
+    if (B.Pawn == none)
+    {
+        RemoveFromQueue(B);
+        SpawnPlayer(B);
+        SetTimer(3.0f, false, 'XangModCheckAIKing');
+    }
+}
+
+// Called from XangModKingBot.Possess: point the objective at the new King, as PawnHasRespawned does.
+function XangModAIKingSpawned(XangModKingBot B, AOCPawn P)
+{
+    XangModKingLog("possess bot="$B@"pawn="$P@"family="$(P != none ? string(P.PawnFamily) : "none")@"current="$XangModAIKingBot);
+    if (B != XangModAIKingBot || XangModKingObj == none || P == none)
+    {
+        B.SetTimer(0.01f, false, 'XangModLeave'); // stale King: leave once the spawn finishes
+        return;
+    }
+    XangModKingObj.Parent = P;
+    XangModKingObj.bIsEnabled = true;
+    XangModKingObj.bForceNetUpdate = true;
+    P.AddDeathListener(XangModKingObj);
+    P.bAlwaysRelevant = true;
+    P.bForceNetUpdate = true;
+}
+
+// Same cleanup as KillBots, for one bot.
+function XangModRemoveAIKing(XangModKingBot B)
+{
+    if (B == none)
+        return;
+    XangModKingLog("remove bot="$B);
+    if (B == XangModAIKingBot)
+        XangModAIKingBot = none;
+    if (B.PlayerReplicationInfo != none && B.PlayerReplicationInfo.Team != none)
+    {
+        if (B.PlayerReplicationInfo.Team.TeamIndex == 0)
+            AOCGRI(GameReplicationInfo).AgathaSize -= 1;
+        else
+            AOCGRI(GameReplicationInfo).MasonSize -= 1;
+    }
+    if (B.Pawn != none && XangModKingObj != none)
+        AOCPawn(B.Pawn).RemoveDeathListener(XangModKingObj);
+    RemoveFromQueue(B);
+    if (B.Pawn != none)
+        B.Pawn.Destroy();
+    B.Destroy();
+}
+
+function NavigationPoint FindPlayerStart(Controller Player, optional byte InTeam, optional string IncomingName)
+{
+    if (Player != none && Player == XangModAIKingBot && XangModKingObj != none)
+    {
+        XangModKingLog("start="$XangModKingObj.KingSpawnLocation);
+        if (XangModKingObj.KingSpawnLocation != none)
+            return XangModKingObj.KingSpawnLocation;
+    }
+    return super.FindPlayerStart(Player, InTeam, IncomingName);
+}
+
+// AdminAIKing: switch the bot King on or off. Before the King stage it decides who gets picked;
+// during it, off hands the throne to a human defender and on takes it back.
+function string XangModSetAIKing(bool bOn)
+{
+    local AOCTeamObjectivePC PC;
+
+    XangModAIKingMode = bOn ? 1 : 2;
+    if (XangModKingObj == none)
+        return "Bot King " $ (bOn ? "ON" : "OFF") $ " for this match";
+    if (!bOn && XangModAIKingBot != none)
+    {
+        XangModKingObj.bIsEnabled = false;
+        XangModKingObj.Parent = none;
+        XangModRemoveAIKing(XangModAIKingBot);
+        XangModKingObj.ActivateObjective(); // vanilla picks the top-scoring defender, 10s warning as usual
+        return "Bot King OFF: handing the throne to a player";
+    }
+    if (bOn && XangModAIKingBot == none)
+    {
+        PC = AOCTeamObjectivePC(XangModKingObj.TemporaryController);
+        if (PC != none && !XangModKingObj.bIsEnabled)
+            XangModTakeKingSlot();
+        else if (PC != none)
+        {
+            // A human already holds the throne: retire them and spawn the bot in their place.
+            XangModKingObj.bIsEnabled = false;
+            if (XangModKingObj.Parent != none)
+                XangModKingObj.Parent.RemoveDeathListener(XangModKingObj);
+            PC.MyAssassinationObjective = none;
+            PC.bIsKing = false;
+            PC.bSpawnAsKing = false;
+            PC.bCanChangeClass = true;
+            // They'd respawn as the King class otherwise: back to a knight of their faction (index 0-4 Agatha, 5-9 Mason).
+            PC.SetNewClass(AOCGRI(GameReplicationInfo).FamilyInfos[(XangModKingObj.TeamOwner == EFAC_AGATHA ? 0 : 5) + ECLASS_Knight], false, true);
+            if (PC.Pawn != none)
+                PC.Pawn.Suicide();
+            XangModKingObj.Parent = none;
+            XangModKingObj.TemporaryController = none;
+            XangModSpawnAIKing();
+        }
+        else
+            XangModSpawnAIKing();
+        return "Bot King ON: taking the throne";
+    }
+    return "Bot King already " $ (bOn ? "ON" : "OFF");
+}
+
+// killbots would kill the King and complete the objective; replace it instead.
+exec function KillBots()
+{
+    local bool bHadKing;
+
+    bHadKing = XangModAIKingBot != none && XangModKingObj != none && XangModKingObj.bIsEnabled;
+    if (bHadKing)
+    {
+        XangModKingObj.bIsEnabled = false;
+        XangModKingObj.Parent = none;
+        XangModRemoveAIKing(XangModAIKingBot);
+    }
+    super.KillBots();
+    if (bHadKing)
+        XangModSpawnAIKing();
+}
+
+function BroadcastSystemMessage(int Indx, optional LocalizationData ExtraText1, optional LocalizationData ExtraText2, optional EAOCFaction DesignatedTeam = EFAC_ALL)
+{
+    if (bXangModKingHandoff && Indx == 13)
+        return;
+    super.BroadcastSystemMessage(Indx, ExtraText1, ExtraText2, DesignatedTeam);
+}
+
+function PrivateMessage(PlayerController Sender, PlayerController Receiever, string Message, optional bool bUseCustomCol = false, optional string CustomCol)
+{
+    if (bXangModKingHandoff && InStr(Message, "PGUP") != INDEX_NONE)
+        return;
+    super.PrivateMessage(Sender, Receiever, Message, bUseCustomCol, CustomCol);
+}
+
+// Override Timer to only force net updates when scoreboard values actually change
+State AOCRoundInProgress
+{
+    function Timer()
+    {
+        local float NewCurVar, NewMaxVar, NewExtraVar;
+        local float OldCurVar, OldMaxVar, OldExtraVar;
+        local bool bNeedsUpdate;
+        
+        super.Timer();
+
+        // CE Autoskip
+        if (IsCompForest())
+        {
+            // CompForest: automatically skip objective 1 when the in-game timer reaches the
+            // 1-minute-remaining mark and objective 1 still hasn't been completed. Keyed off
+            // TimeLeft (not WorldInfo.TimeSeconds) so admin pause doesn't skew the trigger.
+            if (CurrentObjectiveStage == 0 && TimeLeft <= 60 && TimeLeft > 0 && !bCECompForestAutoskipFired)
+            {
+                XangModObjSkipMark = CurrentObjectiveStage + 1;
+                TriggerConsoleEvent('skip');
+                bCECompForestAutoskipFired = true;
+            }
+            else if (CurrentObjectiveStage != 0 || TimeLeft > 60)
+            {
+                // Objective advanced or timer went back up; re-arm for the next stage 0 pass.
+                bCECompForestAutoskipFired = false;
+            }
+        }
+        else if (bCEAutoskipEnabled)
+        {
+            // Generic admin-toggled autoskip: fire "ce skip" when timer drops to 10s
+            if (TimeLeft <= 10 && TimeLeft > 0 && !bCEAutoskipFired)
+            {
+                XangModObjSkipMark = CurrentObjectiveStage + 1;
+                TriggerConsoleEvent('skip');
+                bCEAutoskipFired = true;
+            }
+            else if (TimeLeft > 10)
+            {
+                // Timer went back up (new objective / bonus time), allow next autoskip
+                bCEAutoskipFired = false;
+            }
+        }
+        
+        // Only update scoreboard text if values actually changed
+        if (CurrentObjectiveStage >= 0 && AllObjSBText[CurrentObjectiveStage].bInUse)
+        {
+            // Cache current GRI values before updating
+            OldCurVar = AOCTOGRI(GameReplicationInfo).CurObjective.CurVar;
+            OldMaxVar = AOCTOGRI(GameReplicationInfo).CurObjective.MaxVar;
+            OldExtraVar = AOCTOGRI(GameReplicationInfo).CurObjective.ExtraVar;
+            bNeedsUpdate = false;
+            
+            // Read new values from Kismet variables
+            if (AllObjSBText[CurrentObjectiveStage].CurVar != none)
+            {
+                if (SeqVar_Int(AllObjSBText[CurrentObjectiveStage].CurVar) != none)
+                    NewCurVar = float(SeqVar_Int(AllObjSBText[CurrentObjectiveStage].CurVar).IntValue);
+                else
+                    NewCurVar = SeqVar_Float(AllObjSBText[CurrentObjectiveStage].CurVar).FloatValue;
+                
+                if (OldCurVar != NewCurVar)
+                {
+                    AOCTOGRI(GameReplicationInfo).CurObjective.CurVar = NewCurVar;
+                    AOCTOGRI(GameReplicationInfo).CurObjective.bUseIntegerCurMax = AllObjSBText[CurrentObjectiveStage].bUseIntegerCurMax;
+                    bNeedsUpdate = true;
+                }
+            }
+            
+            if (AllObjSBText[CurrentObjectiveStage].MaxVar != none)
+            {
+                if (SeqVar_Int(AllObjSBText[CurrentObjectiveStage].MaxVar) != none)
+                    NewMaxVar = float(SeqVar_Int(AllObjSBText[CurrentObjectiveStage].MaxVar).IntValue);
+                else
+                    NewMaxVar = SeqVar_Float(AllObjSBText[CurrentObjectiveStage].MaxVar).FloatValue;
+                
+                if (OldMaxVar != NewMaxVar)
+                {
+                    AOCTOGRI(GameReplicationInfo).CurObjective.MaxVar = NewMaxVar;
+                    AOCTOGRI(GameReplicationInfo).CurObjective.bUseIntegerCurMax = AllObjSBText[CurrentObjectiveStage].bUseIntegerCurMax;
+                    bNeedsUpdate = true;
+                }
+            }
+            
+            if (AllObjSBText[CurrentObjectiveStage].ExtraVar != none)
+            {
+                if (SeqVar_Int(AllObjSBText[CurrentObjectiveStage].ExtraVar) != none)
+                    NewExtraVar = float(SeqVar_Int(AllObjSBText[CurrentObjectiveStage].ExtraVar).IntValue);
+                else
+                    NewExtraVar = SeqVar_Float(AllObjSBText[CurrentObjectiveStage].ExtraVar).FloatValue;
+                
+                if (OldExtraVar != NewExtraVar)
+                {
+                    AOCTOGRI(GameReplicationInfo).CurObjective.ExtraVar = NewExtraVar;
+                    AOCTOGRI(GameReplicationInfo).CurObjective.bUseIntegerExtra = AllObjSBText[CurrentObjectiveStage].bUseIntegerExtra;
+                    bNeedsUpdate = true;
+                }
+            }
+            
+            // Only force net update if values actually changed
+            // This prevents unnecessary replication when scoreboard is static
+            if (bNeedsUpdate)
+                AOCTOGRI(GameReplicationInfo).bForceNetUpdate = true;
+        }
+    }
+}
+
+DefaultProperties
+{
+    SpawnWaveInterval = 10.0f
+    MinimumRespawnTime = 10.0
+}
