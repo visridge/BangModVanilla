@@ -794,6 +794,10 @@ function ProcessResolvedAttack(HitInfo Info, string DamageString, optional bool 
 	Info.HitForce *= int(PawnState != ESTATE_PUSH && PawnState != ESTATE_BATTERING);
 	Info.HitForce *= int(!bFlinch);
 	HitForceMag = VSize( Info.HitForce );
+	// BangModVanilla: admin-driven parry knockback multiplier (AdminOverrideParryKnockback).
+	// Scale only the momentum the defender receives for a parried/shielded hit.
+	if (bParry && class'BangModVanillaAOCDuelPlayerController'.default.fParryKnockbackMultiplier > 0.0f)
+		HitForceMag *= class'BangModVanillaAOCDuelPlayerController'.default.fParryKnockbackMultiplier;
 	Info.HitForce.Z = 0.f;
 	Info.HitForce = Normal(Info.HitForce) * HitForceMag;
 

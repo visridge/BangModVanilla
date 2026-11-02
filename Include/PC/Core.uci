@@ -286,6 +286,9 @@ event Possess(Pawn inPawn, bool bVehicleTransition)
 	{
 		ClientSyncParryBoxSettings(class'BangModVanillaAOCDuelPlayerController'.default.bBangModVanillaParryBox,
 			class'BangModVanillaAOCDuelPlayerController'.default.bSkeletalParry);
+		// Admin-adjustable combat settings must also reach late joiners and respawning players.
+		ClientSyncFeintRecoveryMultiplier(class'BangModVanillaAOCDuelPlayerController'.default.fFeintRecoveryMultiplier);
+		ClientSyncParryKnockbackMultiplier(class'BangModVanillaAOCDuelPlayerController'.default.fParryKnockbackMultiplier);
 		// ClientSyncCollisionRadius(class'BangModVanillaAOCDuelPlayerController'.default.fBangModVanillaCollisionRadius);
 	}
 	

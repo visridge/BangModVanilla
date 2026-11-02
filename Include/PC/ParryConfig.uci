@@ -127,3 +127,33 @@ reliable client function ClientSyncCollisionRadius(float Radius)
 	ApplyCollisionRadiusToCurrentPawn();
 }
 
+reliable client function ClientSyncFeintRecoveryMultiplier(float fMultiplier)
+{
+	fFeintRecoveryMultiplier = fMultiplier;
+	class'BangModVanillaAOCDuelPlayerController'.default.fFeintRecoveryMultiplier = fMultiplier;
+}
+
+// Server: push the feint-recovery multiplier to every player, not just the admin.
+function BangModVanillaSyncFeintRecoveryToAll(float fMultiplier)
+{
+	local `{GAMEMODE}PlayerController PC;
+
+	foreach WorldInfo.AllControllers(class'`{GAMEMODE}PlayerController', PC)
+		PC.ClientSyncFeintRecoveryMultiplier(fMultiplier);
+}
+
+reliable client function ClientSyncParryKnockbackMultiplier(float fMultiplier)
+{
+	fParryKnockbackMultiplier = fMultiplier;
+	class'BangModVanillaAOCDuelPlayerController'.default.fParryKnockbackMultiplier = fMultiplier;
+}
+
+// Server: push the parry knockback multiplier to every player, not just the admin.
+function BangModVanillaSyncParryKnockbackToAll(float fMultiplier)
+{
+	local `{GAMEMODE}PlayerController PC;
+
+	foreach WorldInfo.AllControllers(class'`{GAMEMODE}PlayerController', PC)
+		PC.ClientSyncParryKnockbackMultiplier(fMultiplier);
+}
+

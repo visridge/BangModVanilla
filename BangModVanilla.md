@@ -1840,6 +1840,8 @@ understanding before you touch them:
 |---|---|---|
 | `AdminTournamentMode [bool]` | Enable tournament mode (mod supplies its own readiness via `!ready` in chat; vanilla `bReady` is a join gate, not readiness) | — |
 | `AdminSetCollisionRadius <float>` | Player collision bubble radius. Vanilla AOC default is 39.0 | `fBangModVanillaCollisionRadius` |
+| `AdminOverrideFeintRecovery [float]` | Set the server-wide feint recovery multiplier (0.1–5.0; no argument resets to 1.0) | `fFeintRecoveryMultiplier` |
+| `AdminOverrideParryKnockback [float]` | Set the server-wide knockback multiplier for parried hits (0.1–5.0; no argument resets to 1.0) | `fParryKnockbackMultiplier` |
 | `AdminEnableGoFast [bool]` | Cuts `MaxSprintSpeedTime` (time to reach full sprint) by MAA 50%, Vanguard 35%, Knight 20%; archers unchanged. Top sprint speed is unchanged. Applies immediately, no respawn | `bBangModVanillaGoFast` |
 | `AdminCEAutoskip` | Fire `ce skip` automatically when the objective timer reaches 5 seconds | — |
 | `AdminSkipObjective` | Complete every objective in the current TO stage so the map's Kismet advances it; that stage awards no bonus time. Skipping the final stage ends the match | — |
@@ -1939,8 +1941,9 @@ All in `Include/PC/Debug.uci` unless noted.
 
 ### 8.7 Config variables
 
-`globalconfig` variables on the player controller, declared in `Include/PC/Vars.uci`. These
-persist per-client in the user's config:
+`globalconfig` variables on the player controller, declared in `Include/PC/Vars.uci`. Local
+preferences persist in the user's config. The admin combat multipliers are saved server-side
+and synchronized to connected clients:
 
 | Variable | Meaning |
 |---|---|
@@ -1949,6 +1952,8 @@ persist per-client in the user's config:
 | `bSkeletalParry` | Legacy parry-component visualization/sizing value; not the melee parry rule |
 | `bBangModVanillaGoFast` | Faster sprint ramp-up per class (`AdminEnableGoFast`) |
 | `fBangModVanillaCollisionRadius` | Player collision bubble radius (vanilla 39.0) |
+| `fFeintRecoveryMultiplier` | Server-wide feint timing multiplier (`AdminOverrideFeintRecovery`, default 1.0; clamp 0.1–5.0) |
+| `fParryKnockbackMultiplier` | Server-wide multiplier for knockback on parried hits (`AdminOverrideParryKnockback`, default 1.0; clamp 0.1–5.0) |
 | `iBangModVanillaMinNetSpeed` | Minimum net speed to enforce |
 
 Game-side `config` variables in `Include/Game/Vars.uci`:
