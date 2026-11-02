@@ -1,4 +1,4 @@
-# XangMod
+# BangModVanilla
 
 A competitive gameplay modification for *Chivalry: Medieval Warfare*. Ships as
 **SlumpMod**. Dedicated to the greatness of Emperor Bill.
@@ -8,7 +8,7 @@ custom character and weapon customization system.
 
 ## Documentation
 
-The main reference is **[XANGMOD.md](XANGMOD.md)**. The experimental network animation
+The main reference is **[BangModVanilla.md](BangModVanilla.md)**. The experimental network animation
 plan is in **[NETWORK_ANIMATION_INTERPOLATION.md](NETWORK_ANIMATION_INTERPOLATION.md)**.
 
 Build and deploy is §2, code layout is §3, and the UnrealScript constraints that will

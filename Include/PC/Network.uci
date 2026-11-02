@@ -1,5 +1,5 @@
-// XangMod - Network.uci
-// Included via XangModPlayerController.uci. Vars live in PC/Vars.uci; DefaultProperties in PC/Effects.uci (last).
+// BangModVanilla - Network.uci
+// Included via BangModVanillaPlayerController.uci. Vars live in PC/Vars.uci; DefaultProperties in PC/Effects.uci (last).
 /**
  * Undo zeroed values an older build persisted into UDKSettings.ini -- globalconfig, so the
  * ini beats DefaultProperties and the zeros stick for everyone who ever ran that build.
@@ -7,22 +7,22 @@
  * treating it as "never set" is safe; the bool is only restored alongside a zero distance,
  * which is the stale-write signature.
  */
-simulated function XangModRepairPersistedConfig()
+simulated function BangModVanillaRepairPersistedConfig()
 {
 	local bool bDirty;
 
 	// Literals, NOT default.X: a globalconfig class default is itself loaded from the ini,
 	// so default.X IS the stale zero. Verified live.
 
-	if (iXangModMinNetSpeed == 0)
+	if (iBangModVanillaMinNetSpeed == 0)
 	{
-		iXangModMinNetSpeed = 15000;
+		iBangModVanillaMinNetSpeed = 15000;
 		bDirty = true;
 	}
 
-	if (iXangModMinNetSpeedFallback == 0)
+	if (iBangModVanillaMinNetSpeedFallback == 0)
 	{
-		iXangModMinNetSpeedFallback = 15000;
+		iBangModVanillaMinNetSpeedFallback = 15000;
 		bDirty = true;
 	}
 
@@ -33,7 +33,7 @@ simulated function XangModRepairPersistedConfig()
 /** The numbers behind saturation and rubber-banding. Type NetDebug. */
 exec function NetDebug()
 {
-	ClientDisplayConsoleMessage("---- XangMod net state ----");
+	ClientDisplayConsoleMessage("---- BangModVanilla net state ----");
 
 	// The numbers that decide saturation. "Connection saturated!" is the stat net HUD
 	// reporting IsNetReady(0) == false, and that is judged against CurrentNetSpeed --
@@ -49,7 +49,7 @@ exec function NetDebug()
 	// what the server knows about your position, which is why a little saturation feels
 	// like a lot of rubber-banding.
 	ClientDisplayConsoleMessage("Move send interval: 0.05s (20 Hz) on dedicated -- AOCPlayerController.uc:9239");
-	ClientDisplayConsoleMessage("Auto-netspeed: config=" $ iXangModMinNetSpeed @ "fallback=" $ iXangModMinNetSpeedFallback @ "tries=" $ iXangModNetSpeedTries @ "last=" $ nXangModNetSpeedBlock);
+	ClientDisplayConsoleMessage("Auto-netspeed: config=" $ iBangModVanillaMinNetSpeed @ "fallback=" $ iBangModVanillaMinNetSpeedFallback @ "tries=" $ iBangModVanillaNetSpeedTries @ "last=" $ nBangModVanillaNetSpeedBlock);
 	ClientDisplayConsoleMessage("-----------------------------");
 }
 
@@ -67,58 +67,58 @@ exec function NetDebug()
  *
  * 15000 because that is where the engine clamps -- 0x3A98 is a hardcoded immediate in the
  * net driver, and SetNetSpeed(100000) was observed landing on exactly 15000. This only
- * raises what THIS client sends. Set iXangModMinNetSpeed negative to opt out.
+ * raises what THIS client sends. Set iBangModVanillaMinNetSpeed negative to opt out.
  */
-simulated function XangModRestoreNetSpeed()
+simulated function BangModVanillaRestoreNetSpeed()
 {
 	local int Target;
 
 	// Every bail-out records WHY. The automatic path was reported as doing nothing while
-	// the identical SetNetSpeed call from the XangModNetSpeed exec worked, so the
+	// the identical SetNetSpeed call from the BangModVanillaNetSpeed exec worked, so the
 	// difference has to be one of these guards -- and naming which one beats another
 	// round of me speculating about it.
 	if (Player == none)
 	{
-		nXangModNetSpeedBlock = 'Player_is_none';
+		nBangModVanillaNetSpeedBlock = 'Player_is_none';
 		return;
 	}
 	// 0 means "config never delivered a value" -- fall back rather than do nothing.
-	Target = iXangModMinNetSpeed;
+	Target = iBangModVanillaMinNetSpeed;
 	if (Target == 0)
-		Target = default.iXangModMinNetSpeedFallback;
+		Target = default.iBangModVanillaMinNetSpeedFallback;
 
 	if (Target < 0)
 	{
-		nXangModNetSpeedBlock = 'opted_out';
+		nBangModVanillaNetSpeedBlock = 'opted_out';
 		return;
 	}
 	if (!IsLocalPlayerController())
 	{
-		nXangModNetSpeedBlock = 'not_local_PC';
+		nBangModVanillaNetSpeedBlock = 'not_local_PC';
 		return;
 	}
 	if (Player.CurrentNetSpeed >= Target)
 	{
-		nXangModNetSpeedBlock = 'already_at_or_above';
+		nBangModVanillaNetSpeedBlock = 'already_at_or_above';
 		return;
 	}
 
-	iXangModNetSpeedTries++;
+	iBangModVanillaNetSpeedTries++;
 	SetNetSpeed(Target);
 
 	// Did the call actually stick? If SetNetSpeed silently refuses in this context the
 	// value will not have moved, and that is a different problem from never being called.
 	if (Player.CurrentNetSpeed < Target)
-		nXangModNetSpeedBlock = 'SetNetSpeed_refused';
+		nBangModVanillaNetSpeedBlock = 'SetNetSpeed_refused';
 	else
-		nXangModNetSpeedBlock = 'applied';
+		nBangModVanillaNetSpeedBlock = 'applied';
 }
 
 /** The server caps us here at login; put it back afterwards. */
 reliable client function ClientCapBandwidth(int Cap)
 {
 	super.ClientCapBandwidth(Cap);
-	XangModRestoreNetSpeed();
+	BangModVanillaRestoreNetSpeed();
 }
 
 /**
@@ -133,7 +133,7 @@ reliable client function ClientReconnectDueToPacketLoss()
 }
 
 /**
- * Raise this client's own send budget at runtime. Usage: XangModNetSpeed 100000, then
+ * Raise this client's own send budget at runtime. Usage: BangModVanillaNetSpeed 100000, then
  * check stat net under load.
  *
  * "Connection saturated!" is IsNetReady(0) judged against Player.CurrentNetSpeed, not any
@@ -141,7 +141,7 @@ reliable client function ClientReconnectDueToPacketLoss()
  * at that instant becomes a hard ceiling. An exec rather than automatic: it changes only
  * what this client pushes upstream, which should be a measured decision.
  */
-exec function XangModNetSpeed(int NewSpeed)
+exec function BangModVanillaNetSpeed(int NewSpeed)
 {
 	if (Player == none)
 		return;

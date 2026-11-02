@@ -1,0 +1,180 @@
+// BangModVanilla: CompForest-only alternating spawn groups.
+//
+// Map authors tag AOCPlayerStart actors as:
+//   Obj3_Agatha_A, Obj3_Agatha_B, Obj3_Mason_A, Obj3_Mason_B
+//
+// CurrentObjectiveStage is zero-based in AOCTeamObjective, so stage 2 maps to Obj3.
+var config bool bEnableCompForestAlternatingSpawns;
+var int iBangModVanillaCompForestLastStage;
+var int iBangModVanillaCompForestLastAgathaGroup;
+var int iBangModVanillaCompForestLastMasonGroup;
+
+function bool BangModVanillaIsCompForestTO()
+{
+    local AOCGame G;
+
+    // Included from BangModVanillaGame.uci, so this compiles into every gametype, and they are all
+    // siblings under AOCGame -- BangModVanillaTO(self) is an impossible downcast everywhere but TO.
+    // Via an AOCGame local it is legal, and CurrentObjectiveStage is declared on
+    // AOCTeamObjective anyway, so nothing is lost by widening the target.
+    G = self;
+
+    return AOCTeamObjective(G) != none
+        && WorldInfo != none
+        && WorldInfo.GetMapName() ~= "AOCTO-CompForest_p";
+}
+
+function string BangModVanillaCompForestFactionName(EAOCFaction Team)
+{
+    if (Team == EFAC_AGATHA)
+        return "Agatha";
+    if (Team == EFAC_MASON)
+        return "Mason";
+
+    return "";
+}
+
+function EAOCFaction BangModVanillaGetSpawnFaction(Controller Player, optional byte InTeam)
+{
+    local AOCPlayerController PC;
+
+    if (Player == none)
+        return EFAC_NONE;
+
+    PC = AOCPlayerController(Player);
+    if (PC != none && PC.CurrentFamilyInfo != none)
+        return PC.CurrentFamilyInfo.FamilyFaction;
+
+    if (Player.PlayerReplicationInfo != none && Player.PlayerReplicationInfo.Team != none)
+        return EAOCFaction(Player.PlayerReplicationInfo.Team.TeamIndex);
+
+    if (InTeam != 255)
+        return EAOCFaction(InTeam);
+
+    return EFAC_NONE;
+}
+
+function string BangModVanillaCompForestSpawnTag(int ObjectiveNumber, EAOCFaction Team, int GroupIndex)
+{
+    local string GroupName;
+
+    GroupName = (GroupIndex == 0) ? "A" : "B";
+
+    return "Obj" $ string(ObjectiveNumber)
+        $ "_" $ BangModVanillaCompForestFactionName(Team)
+        $ "_" $ GroupName;
+}
+
+function bool BangModVanillaCompForestIsSpawnAllowed(AOCPlayerStart PS, EAOCFaction Team, string DesiredTag)
+{
+    if (PS == none)
+        return false;
+
+    return string(PS.Tag) ~= DesiredTag
+        && (PS.PlayerStartFaction == Team || PS.PlayerStartFaction == EFAC_ALL)
+        && !PS.bOnlyUseAsLevelLoadCamera
+        && SpawnPointClear(PS);
+}
+
+function PlayerStart BangModVanillaPickCompForestStartFromGroup(EAOCFaction Team, int ObjectiveNumber, int GroupIndex)
+{
+    local AOCPlayerStart PS;
+    local array<AOCPlayerStart> Starts;
+    local string DesiredTag;
+
+    DesiredTag = BangModVanillaCompForestSpawnTag(ObjectiveNumber, Team, GroupIndex);
+    if (DesiredTag == "")
+        return none;
+
+    foreach WorldInfo.AllNavigationPoints(class'AOCPlayerStart', PS)
+    {
+        if (BangModVanillaCompForestIsSpawnAllowed(PS, Team, DesiredTag))
+            Starts.AddItem(PS);
+    }
+
+    if (Starts.Length == 0)
+        return none;
+
+    return Starts[Rand(Starts.Length)];
+}
+
+function BangModVanillaSetCompForestLastGroup(EAOCFaction Team, int GroupIndex)
+{
+    if (Team == EFAC_AGATHA)
+        iBangModVanillaCompForestLastAgathaGroup = GroupIndex;
+    else if (Team == EFAC_MASON)
+        iBangModVanillaCompForestLastMasonGroup = GroupIndex;
+}
+
+function int BangModVanillaGetCompForestLastGroup(EAOCFaction Team)
+{
+    if (Team == EFAC_AGATHA)
+        return iBangModVanillaCompForestLastAgathaGroup;
+    if (Team == EFAC_MASON)
+        return iBangModVanillaCompForestLastMasonGroup;
+
+    return -1;
+}
+
+function PlayerStart BangModVanillaChooseCompForestPlayerStart(Controller Player, optional byte InTeam)
+{
+    local AOCGame G;
+    local AOCTeamObjective TOGame;
+    local EAOCFaction Team;
+    local PlayerStart PickedStart;
+    local int ObjectiveNumber;
+    local int LastGroup;
+    local int NextGroup;
+    local int FallbackGroup;
+
+    G = self;
+    TOGame = AOCTeamObjective(G);
+    if (!bEnableCompForestAlternatingSpawns || TOGame == none || !BangModVanillaIsCompForestTO())
+        return none;
+
+    if (TOGame.CurrentObjectiveStage != 2)
+        return none;
+
+    Team = BangModVanillaGetSpawnFaction(Player, InTeam);
+    if (Team != EFAC_AGATHA && Team != EFAC_MASON)
+        return none;
+
+    if (iBangModVanillaCompForestLastStage != TOGame.CurrentObjectiveStage)
+    {
+        iBangModVanillaCompForestLastStage = TOGame.CurrentObjectiveStage;
+        iBangModVanillaCompForestLastAgathaGroup = -1;
+        iBangModVanillaCompForestLastMasonGroup = -1;
+    }
+
+    ObjectiveNumber = TOGame.CurrentObjectiveStage + 1;
+    LastGroup = BangModVanillaGetCompForestLastGroup(Team);
+    NextGroup = (LastGroup == 0) ? 1 : 0;
+    FallbackGroup = (NextGroup == 0) ? 1 : 0;
+
+    PickedStart = BangModVanillaPickCompForestStartFromGroup(Team, ObjectiveNumber, NextGroup);
+    if (PickedStart != none)
+    {
+        BangModVanillaSetCompForestLastGroup(Team, NextGroup);
+        return PickedStart;
+    }
+
+    PickedStart = BangModVanillaPickCompForestStartFromGroup(Team, ObjectiveNumber, FallbackGroup);
+    if (PickedStart != none)
+    {
+        BangModVanillaSetCompForestLastGroup(Team, FallbackGroup);
+        return PickedStart;
+    }
+
+    return none;
+}
+
+function PlayerStart ChoosePlayerStart(Controller Player, optional byte InTeam)
+{
+    local PlayerStart CompForestStart;
+
+    CompForestStart = BangModVanillaChooseCompForestPlayerStart(Player, InTeam);
+    if (CompForestStart != none)
+        return CompForestStart;
+
+    return super.ChoosePlayerStart(Player, InTeam);
+}

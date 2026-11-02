@@ -1,9 +1,9 @@
-// XangMod - Combat.uci
-// Included via XangModPawn.uci. Vars live in Pawn/Vars.uci; DefaultProperties in Pawn/Camera.uci (last).
+// BangModVanilla - Combat.uci
+// Included via BangModVanillaPawn.uci. Vars live in Pawn/Vars.uci; DefaultProperties in Pawn/Camera.uci (last).
 /** Check if a pawn is currently in a riposte (for flinch immunity) */
 simulated function bool IsInRiposte(Pawn CheckPawn) {
 	local AOCMeleeWeapon MeleeWep;
-	local XangModPawn BangPawn;
+	local BangModVanillaPawn BangPawn;
 	
 	if (CheckPawn == none || CheckPawn.Weapon == none)
 		return false;
@@ -21,7 +21,7 @@ simulated function bool IsInRiposte(Pawn CheckPawn) {
 		return true;
 	
 	// Damage grace period disabled.
-	// BangPawn = XangModPawn(CheckPawn);
+	// BangPawn = BangModVanillaPawn(CheckPawn);
 	// if (BangPawn != none && MeleeWep.bParryHitCounter 
 	// 	&& (WorldInfo.TimeSeconds - BangPawn.fLastParrySuccessTime) <= BangPawn.fRiposteGracePeriod)
 	// 	return true;
@@ -59,8 +59,8 @@ simulated function bool ShouldActivateFlinch(HitInfo Info, class<AOCWeapon> Used
 	// Damage grace period disabled.
 	// if (AOCMeleeWeapon(Info.HitActor.Weapon) != none
 	// 	&& AOCMeleeWeapon(Info.HitActor.Weapon).bParryHitCounter == true
-	// 	&& XangModPawn(Info.HitActor) != none
-	// 	&& (WorldInfo.TimeSeconds - XangModPawn(Info.HitActor).fLastParrySuccessTime) <= XangModPawn(Info.HitActor).fRiposteGracePeriod
+	// 	&& BangModVanillaPawn(Info.HitActor) != none
+	// 	&& (WorldInfo.TimeSeconds - BangModVanillaPawn(Info.HitActor).fLastParrySuccessTime) <= BangModVanillaPawn(Info.HitActor).fRiposteGracePeriod
 	// )
 	// 	return false;
 	
@@ -155,7 +155,7 @@ simulated function bool CheckProjectileParry(HitInfo Info) {
 	return false;
 }
 
-simulated function bool XangModDirectionalMeleeParry(HitInfo Info) {
+simulated function bool BangModVanillaDirectionalMeleeParry(HitInfo Info) {
 	local vector DefenderForward;
 	local vector HitOffset;
 	local vector AttackerOffset;
@@ -210,7 +210,7 @@ simulated function bool DetectSuccessfulParry(out HitInfo Info, out int bParry, 
 	local bool bRewardableParry;
 
 	// Don't (non-shield) parry oil pots or smoke pots
-	if (!Info.HitActor.StateVariables.bIsActiveShielding && (AOCWeapon_OilPot(Info.Instigator.Weapon) != none || XangModWeapon_SmokePot(Info.Instigator.Weapon) != none))
+	if (!Info.HitActor.StateVariables.bIsActiveShielding && (AOCWeapon_OilPot(Info.Instigator.Weapon) != none || BangModVanillaWeapon_SmokePot(Info.Instigator.Weapon) != none))
 		return false;
 
 	// bParry = 1;
@@ -236,8 +236,8 @@ simulated function bool DetectSuccessfulParry(out HitInfo Info, out int bParry, 
 	}
 
 	// Opponent has a successful parry
-	if (XangModPawn(Info.HitActor) != none)
-		XangModPawn(Info.HitActor).RecordSuccessfulParryTime();
+	if (BangModVanillaPawn(Info.HitActor) != none)
+		BangModVanillaPawn(Info.HitActor).RecordSuccessfulParryTime();
 
 	AOCWeapon(Info.HitActor.Weapon).NotifySuccessfulParry(Info.AttackType, ParryLR);
 
@@ -248,7 +248,7 @@ simulated function bool DetectSuccessfulParry(out HitInfo Info, out int bParry, 
 		// Only lose stamina if it was a melee attack
 		if (!Info.DamageType.default.bIsProjectile) {
 
-			// XANGMOD: Shields take reduced stamina drain from weapon blocks
+			// BangModVanilla: Shields take reduced stamina drain from weapon blocks
 			// Kicks still flinch through shields (handled below)
 			StaminaDamage = 3;
 
@@ -294,9 +294,9 @@ simulated function bool DetectSuccessfulParry(out HitInfo Info, out int bParry, 
 	else if (Info.HitActor.StateVariables.bIsParrying) {
 		AOCWeaponAttachment(Info.HitActor.CurrentWeaponAttachment).PlayParrySound(false);
 		fParryTimeSeconds = WorldInfo.TimeSeconds;
-        bRewardableParry = XangModPawn(Info.HitActor).fLastParryTimeSeconds > 0 &&
-                           fParryTimeSeconds - XangModPawn(Info.HitActor).fLastParryTimeSeconds <= fSuccessiveParryThresholdSeconds;
-        XangModPawn(Info.HitActor).fLastParryTimeSeconds = fParryTimeSeconds;
+        bRewardableParry = BangModVanillaPawn(Info.HitActor).fLastParryTimeSeconds > 0 &&
+                           fParryTimeSeconds - BangModVanillaPawn(Info.HitActor).fLastParryTimeSeconds <= fSuccessiveParryThresholdSeconds;
+        BangModVanillaPawn(Info.HitActor).fLastParryTimeSeconds = fParryTimeSeconds;
 
         // Take no stamina damage if within successive parry reward threshold, lose 15 stamina for projectiles, otherwise calculate stamina loss
         if (bRewardableParry)
@@ -357,13 +357,13 @@ unreliable client function LogHitTime(float funcTime)
 		AOCPlayerController(Controller).ClientDisplayConsoleMessage("Your swing hit " @string(funcTime) @"seconds after release");
 }
 
-// XANGMOD: Thin dispatcher. Validates the swing once on RPC arrival, then either holds it
+// BangModVanilla: Thin dispatcher. Validates the swing once on RPC arrival, then either holds it
 // (so an in-flight parry can suppress it before any feedback plays) or resolves it immediately.
 // 'self' is the ATTACKER; Info.HitActor is the defender.
 reliable server function AttackOtherPawn(HitInfo Info, string DamageString, optional bool bCheckParryOnly = false, optional bool bBoxParrySuccess, optional bool bHitShield = false, optional SwingTypeImpactSound LastHit = ESWINGSOUND_Slash, optional bool bQuickKick = false)
 {
 	local PlayerReplicationInfo PRI;
-	local XangModPawn DefenderBM;
+	local BangModVanillaPawn DefenderBM;
 	local float fHold;
 	local PendingHit NewPending;
 	local float fHitActionServerTime;
@@ -374,7 +374,7 @@ reliable server function AttackOtherPawn(HitInfo Info, string DamageString, opti
 		PRI = PlayerReplicationInfo;
 	Info.PRI = PRI;
 
-	// XANGMOD: Map this swing's client hit-moment stamp (sent just before us by ServerStampHitTime)
+	// BangModVanilla: Map this swing's client hit-moment stamp (sent just before us by ServerStampHitTime)
 	// onto our timeline for trade ordering, then consume it so a later stampless swing falls back
 	// to ping reconstruction instead of reusing a stale value.
 	fHitActionServerTime = ReconstructActionTime(fPendingHitClientTime);
@@ -383,7 +383,7 @@ reliable server function AttackOtherPawn(HitInfo Info, string DamageString, opti
 	LogHitTime(WorldInfo.TimeSeconds - fLastReleaseStartTime - 0.0087);
 
 	// Block attacks while the attacker is flinched (no trade window)
-	if (XangModMeleeWeapon(Weapon) != none && XangModMeleeWeapon(Weapon).IsInState('Flinch'))
+	if (BangModVanillaMeleeWeapon(Weapon) != none && BangModVanillaMeleeWeapon(Weapon).IsInState('Flinch'))
 		return;
 
 	// Authority / lag-comp validation happens once, when the swing RPC arrives.
@@ -393,7 +393,7 @@ reliable server function AttackOtherPawn(HitInfo Info, string DamageString, opti
 	// Decide whether to HOLD this swing so an in-flight parry can suppress it before any
 	// feedback plays. Only enemy melee swings that would land as a hit are eligible; the hold
 	// length is the defender's one-way latency (0 at 0 ping -> instant, vanilla behavior).
-	DefenderBM = XangModPawn(Info.HitActor);
+	DefenderBM = BangModVanillaPawn(Info.HitActor);
 	fHold = 0.0;
 	if (!bCheckParryOnly
 		&& DefenderBM != none
@@ -424,7 +424,7 @@ reliable server function AttackOtherPawn(HitInfo Info, string DamageString, opti
 	ProcessResolvedAttack(Info, DamageString, bCheckParryOnly, bBoxParrySuccess, bHitShield, LastHit, bQuickKick, false, fHitActionServerTime);
 }
 
-// XANGMOD: The single commit path for a swing — damage, feedback, and replication applied at
+// BangModVanilla: The single commit path for a swing — damage, feedback, and replication applied at
 // once. Called directly from AttackOtherPawn (no hold needed), or from ProcessPendingHits /
 // ResolvePendingHitsAsParry once a held swing's fate is decided. 'self' is the ATTACKER.
 // bForceParry means the defender parried while this swing was held; the final result still has
@@ -445,7 +445,7 @@ function ProcessResolvedAttack(HitInfo Info, string DamageString, optional bool 
 	local bool bOnFire;
 	local bool bPassiveBlock;
 	local AOCWeaponAttachment HitActorWeaponAttachment;
-	local XangModMeleeWeapon DefendingMeleeWeapon;
+	local BangModVanillaMeleeWeapon DefendingMeleeWeapon;
 	local class<AOCWeapon> UsedWeapon;
 	local TraceHitInfo THI;
 	local bool bEnemyWasBot;
@@ -465,7 +465,7 @@ function ProcessResolvedAttack(HitInfo Info, string DamageString, optional bool 
 	Info.PRI = PRI;
 	bBallistaBolt = (Info.DamageType == class'AOCDmgType_BallistaBolt');
 
-	// XANGMOD: Client-timestamp trade priority. If THIS opponent hit us (or has a swing held on
+	// BangModVanilla: Client-timestamp trade priority. If THIS opponent hit us (or has a swing held on
 	// us that will hit) clearly before our own swing landed — beyond fTradeWindowSeconds — the
 	// trade is too staggered, so drop our swing and let whoever connected first win. Swings
 	// within the window still trade. Only real enemy melee swings are eligible; held parry-window
@@ -476,19 +476,19 @@ function ProcessResolvedAttack(HitInfo Info, string DamageString, optional bool 
 		&& bEnableTradeCancellation
 		&& fActionServerTime > 0.0
 		&& Info.HitActor != none
-		&& XangModPawn(Info.HitActor) != none
+		&& BangModVanillaPawn(Info.HitActor) != none
 		&& !Info.DamageType.default.bIsProjectile
 		&& Info.AttackType != Attack_Shove
 		&& !IsOnSameTeam(self, Info.HitActor)
 		&& !IsRiposteAttack()
-		&& ShouldCancelTradeSwing(XangModPawn(Info.HitActor), fActionServerTime))
+		&& ShouldCancelTradeSwing(BangModVanillaPawn(Info.HitActor), fActionServerTime))
 	{
 		if (bShowHitTime && AOCPlayerController(Controller) != none)
 			AOCPlayerController(Controller).ClientDisplayConsoleMessage("Trade swing cancelled (opponent hit first)");
 		return;
 	}
 
-	// XangMod: Ping-normalized trade window for fair competitive play
+	// BangModVanilla: Ping-normalized trade window for fair competitive play
 	// Goal: Remove ping advantage for players under 70ms
 	// 
 	// How it works:
@@ -510,11 +510,11 @@ function ProcessResolvedAttack(HitInfo Info, string DamageString, optional bool 
 	// - Fair window = 64ms + 24ms = 88ms
 	// - If low-ping player was flinched <88ms ago, both hits count (trade)
 	// - If >88ms ago, only high-ping player's hit counts (they won)
-	// if (XangModMeleeWeapon(Weapon) != none && 
-	//     XangModMeleeWeapon(Weapon).IsInState('Flinch'))
+	// if (BangModVanillaMeleeWeapon(Weapon) != none && 
+	//     BangModVanillaMeleeWeapon(Weapon).IsInState('Flinch'))
 	// {
 	// 	// How long have we been flinched?
-	// 	fFlinchDuration = WorldInfo.TimeSeconds - XangModMeleeWeapon(Weapon).fFlinchStateStartTime;
+	// 	fFlinchDuration = WorldInfo.TimeSeconds - BangModVanillaMeleeWeapon(Weapon).fFlinchStateStartTime;
 		
 	// 	// Get both players' ping in seconds (ExactPing is in seconds, Ping is in 0-250 range)
 	// 	fAttackerPing = PlayerReplicationInfo != none ? PlayerReplicationInfo.ExactPing : 0.060;
@@ -549,7 +549,7 @@ function ProcessResolvedAttack(HitInfo Info, string DamageString, optional bool 
 		UsedWeapon = TertiaryWeapon;
 
 	HitActorWeaponAttachment = AOCWeaponAttachment(Info.HitActor.CurrentWeaponAttachment);
-	DefendingMeleeWeapon = XangModMeleeWeapon(Info.HitActor.Weapon);
+	DefendingMeleeWeapon = BangModVanillaMeleeWeapon(Info.HitActor.Weapon);
 
 	// Is the player on the same team?
 	bSameTeam = IsOnSameTeam(self, Info.HitActor);
@@ -571,7 +571,7 @@ function ProcessResolvedAttack(HitInfo Info, string DamageString, optional bool 
 	if (Info.DamageType.default.bIsProjectile)
 		bDirectionalParry = CheckProjectileParry(Info);
 	else
-		bDirectionalParry = Info.AttackType != Attack_Shove && XangModDirectionalMeleeParry(Info);
+		bDirectionalParry = Info.AttackType != Attack_Shove && BangModVanillaDirectionalMeleeParry(Info);
 	
 	bParry = !bNoParry
 			 && bDirectionalParry
@@ -633,7 +633,7 @@ function ProcessResolvedAttack(HitInfo Info, string DamageString, optional bool 
 		ActualDamage *= PawnFamily.fBackstabModifier;
 
 	// If the hit was in a critical location, increase the damage
-	if (Info.UsedWeapon == 0 && XangModWeapon_Crossbow(Weapon) != none && Info.DamageType.default.bIsProjectile)
+	if (Info.UsedWeapon == 0 && BangModVanillaWeapon_Crossbow(Weapon) != none && Info.DamageType.default.bIsProjectile)
 		ActualDamage *= Info.HitActor.PawnFamily.CrossbowLocationModifiers[GetBoneLocation(Info.BoneName)];
 	else
 		ActualDamage *= (Info.DamageType.default.bIsProjectile ? Info.HitActor.PawnFamily.ProjectileLocationModifiers[GetBoneLocation(Info.BoneName)] :
@@ -642,13 +642,13 @@ function ProcessResolvedAttack(HitInfo Info, string DamageString, optional bool 
 	// Apply resistances
 	Resistance = 0;
 	for(i = 0; i < ArrayCount(Info.DamageType.default.DamageType); i++)
-		Resistance += Info.DamageType.default.DamageType[i] * XangModGetDamageResistance(Info.HitActor, i);
+		Resistance += Info.DamageType.default.DamageType[i] * BangModVanillaGetDamageResistance(Info.HitActor, i);
 	ActualDamage *= Resistance;
 
 	// If this was a team hit, reduce by team damage amount
 	if (PawnFamily.FamilyFaction == Info.HitActor.PawnFamily.FamilyFaction)
 	{
-		// XANGMOD: During a tournament-mode pre-round (the warmup before the round
+		// BangModVanilla: During a tournament-mode pre-round (the warmup before the round
 		// starts / before !adminreadyall) team damage is negated entirely. Warmup
 		// team hits and team kills are exactly what pollute the deaths/kills that
 		// stat-tracking RCON consumers record, so prevent the damage rather than
@@ -928,7 +928,7 @@ function ProcessResolvedAttack(HitInfo Info, string DamageString, optional bool 
 	// Firebug ignition — delayed so the blunt impact sound plays cleanly before
 	// the fire scream SFX kicks in. Without the delay the scream drowns out the
 	// weapon impact cue since both fire in the same frame on the same channel.
-	if (XangModWeapon_Firebug(Weapon) != none && Info.HitActor != none
+	if (BangModVanillaWeapon_Firebug(Weapon) != none && Info.HitActor != none
 		&& ActualDamage > 0.0f && !bParry && !bSameTeam && !Info.HitActor.bIsBurning
 		&& Info.HitActor.IsAliveAndWell())
 	{
@@ -936,24 +936,24 @@ function ProcessResolvedAttack(HitInfo Info, string DamageString, optional bool 
 		StoredFirebugHitActor = Info.HitActor;
 	}
 
-	// XANGMOD: Remember this hit on the victim so, if their counter-swing is still in flight, the
+	// BangModVanilla: Remember this hit on the victim so, if their counter-swing is still in flight, the
 	// server can see it landed clearly later and drop it (trade priority). Real enemy melee hits
 	// only — parries, kicks, projectiles and team hits don't gate a trade.
 	if (!bParry && !bSameTeam
 		&& bEnableTradeCancellation
 		&& fActionServerTime > 0.0
 		&& Info.HitActor != none
-		&& XangModPawn(Info.HitActor) != none
+		&& BangModVanillaPawn(Info.HitActor) != none
 		&& !Info.DamageType.default.bIsProjectile
 		&& Info.AttackType != Attack_Shove)
 	{
-		XangModPawn(Info.HitActor).RecordIncomingHit(self, fActionServerTime);
+		BangModVanillaPawn(Info.HitActor).RecordIncomingHit(self, fActionServerTime);
 	}
 }
 
 
 
-// XANGMOD: True when the game is in tournament mode and still in the pre-round warmup,
+// BangModVanilla: True when the game is in tournament mode and still in the pre-round warmup,
 // i.e. the period before the round starts (or before !adminreadyall / opcode 50). This is
 // when players can freely move and hit/kill teammates, which would otherwise be tracked
 // as real kills/deaths by RCON stat consumers. Used to negate team damage in that window.
@@ -982,7 +982,7 @@ function Set_bShowHitTime(bool set)
 }
 
 // ===========================================================================================
-// XANGMOD: Client-timestamp hit-trade priority — helpers + client->server stamp RPCs.
+// BangModVanilla: Client-timestamp hit-trade priority — helpers + client->server stamp RPCs.
 // ===========================================================================================
 
 // Block ballista bolt SPLASH damage only. Direct hits still kill.
@@ -1000,18 +1000,18 @@ event TakeDamage(int Damage, Controller InstigatedBy, vector HitLocation, vector
 	super.TakeDamage(Damage, InstigatedBy, HitLocation, Momentum, DamageType, HitInfo, DamageCauser);
 }
 
-// XANGMOD: Suppress burning scream voice lines. Fire crackle SFX still plays via ActivateFireSFX.
+// BangModVanilla: Suppress burning scream voice lines. Fire crackle SFX still plays via ActivateFireSFX.
 simulated function ActivateBurnScream()
 {
 }
 
 /** Damage resistance for the given defender, honouring the footman stat override. */
-function float XangModGetDamageResistance(AOCPawn Defender, int DamageIndex)
+function float BangModVanillaGetDamageResistance(AOCPawn Defender, int DamageIndex)
 {
-	local class<XangModFamilyInfo_Archer> FootFI;
+	local class<BangModVanillaFamilyInfo_Archer> FootFI;
 
-	if (XangModPawn(Defender) != none)
-		FootFI = XangModPawn(Defender).XangModGetFootmanStatFamilyClass();
+	if (BangModVanillaPawn(Defender) != none)
+		FootFI = BangModVanillaPawn(Defender).BangModVanillaGetFootmanStatFamilyClass();
 
 	if (FootFI != none)
 		return FootFI.default.DamageResistances[DamageIndex];

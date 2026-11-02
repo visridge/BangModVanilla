@@ -23,7 +23,7 @@ Current melee parry flow:
 
 1. `AOCWeaponAttachment` traces the weapon.
 2. If the trace intersects the defender's `ParryComponent`, the attacker sends `bBoxParrySuccess=true` to `AttackOtherPawn`.
-3. `XangMod/Include/Pawn/Combat.uci::ProcessResolvedAttack` treats the attack as parried when `bBoxParrySuccess` is true and the defender is actively parrying or shielding.
+3. `BangModVanilla/Include/Pawn/Combat.uci::ProcessResolvedAttack` treats the attack as parried when `bBoxParrySuccess` is true and the defender is actively parrying or shielding.
 4. `DetectSuccessfulParry` applies stamina, deflect, parry sounds, and successful-parry feedback.
 5. `AdminDisableButtParries` currently adds a front-hemisphere veto inside `DetectSuccessfulParry`.
 
@@ -51,7 +51,7 @@ Use hit location as the primary geometry proof.
 Recommended helper:
 
 ```unrealscript
-simulated function bool XangModDirectionalMeleeParry(HitInfo Info)
+simulated function bool BangModVanillaDirectionalMeleeParry(HitInfo Info)
 ```
 
 Suggested logic:
@@ -109,9 +109,9 @@ Do not make this an admin command initially. Tune in source after playtesting.
 
 ## Files To Change
 
-### `XangMod/Include/Pawn/Combat.uci`
+### `BangModVanilla/Include/Pawn/Combat.uci`
 
-Add `XangModDirectionalMeleeParry(HitInfo Info)` near `CheckProjectileParry`.
+Add `BangModVanillaDirectionalMeleeParry(HitInfo Info)` near `CheckProjectileParry`.
 
 Update `ProcessResolvedAttack`:
 
@@ -123,7 +123,7 @@ Update `ProcessResolvedAttack`:
 
 Remove the old `bDisableButtParries` block from `DetectSuccessfulParry`, because the new directional gate makes that admin-config path obsolete.
 
-### `XangMod/Include/PC/AdminCommands.uci`
+### `BangModVanilla/Include/PC/AdminCommands.uci`
 
 Remove these admin commands entirely:
 
@@ -136,7 +136,7 @@ Remove these admin commands entirely:
 
 Reason: the new parry system is default-on and should not depend on dedicated-server config synchronization.
 
-### `XangMod/Include/PC/Vars.uci`
+### `BangModVanilla/Include/PC/Vars.uci`
 
 Leave old globalconfig booleans in place for the first implementation only if removing them would require touching many unrelated visual/debug paths.
 
@@ -144,11 +144,11 @@ If left in place, mark them as legacy visual/config remnants, not active melee p
 
 Candidate legacy vars:
 
-- `bXangModParryBox`
+- `bBangModVanillaParryBox`
 - `bSkeletalParry`
 - `bDisableButtParries`
 
-### `XangMod/Include/PC/Effects.uci`
+### `BangModVanilla/Include/PC/Effects.uci`
 
 Update comments for those legacy defaults if the vars remain.
 
@@ -158,21 +158,21 @@ Do not present them as active gameplay toggles.
 
 Only after compile and live testing, consider cleaning up:
 
-- `XangMod/Include/PC/ParryConfig.uci`
-- `XangMod/Include/Pawn/Customization.uci` parry component scaling
-- `XangMod/Include/XangModWeaponAttachmentCode.uci` parry component scaling
+- `BangModVanilla/Include/PC/ParryConfig.uci`
+- `BangModVanilla/Include/Pawn/Customization.uci` parry component scaling
+- `BangModVanilla/Include/BangModVanillaWeaponAttachmentCode.uci` parry component scaling
 - Parry-box debug commands
 
 Do not do that in the first pass unless the new directional system is proven and the inherited code no longer depends on `ParryComponent`.
 
 ### Legacy parry component handling
 
-Keep the component for visualization/debugging, but force it non-trace-blocking anywhere XangMod resizes or moves it:
+Keep the component for visualization/debugging, but force it non-trace-blocking anywhere BangModVanilla resizes or moves it:
 
 - `Include/Pawn/Customization.uci`
 - `Include/PC/ParryConfig.uci`
-- `Include/XangModWeaponAttachmentCode.uci`
-- `Classes/XangModWeaponAttachment_DualBucklers.uc`
+- `Include/BangModVanillaWeaponAttachmentCode.uci`
+- `Classes/BangModVanillaWeaponAttachment_DualBucklers.uc`
 
 This prevents vanilla `AOCWeaponAttachment.HandleHitPawn` from adding defenders to `ParryPawns` through `HitInfoTrace.HitComponent == HitPawn.ParryComponent` before the server directional gate runs.
 
@@ -257,13 +257,13 @@ Expected: no matches.
 Grep the melee parry gate:
 
 ```bash
-grep -nE "bBoxParrySuccess|XangModDirectionalMeleeParry|bForceParry" Include/Pawn/Combat.uci
+grep -nE "bBoxParrySuccess|BangModVanillaDirectionalMeleeParry|bForceParry" Include/Pawn/Combat.uci
 ```
 
 Expected:
 
 - `bBoxParrySuccess` may remain as an unused function parameter for compatibility with existing `AttackOtherPawn` calls.
-- The actual melee `bParry =` expression should use `XangModDirectionalMeleeParry`, not `bBoxParrySuccess`.
+- The actual melee `bParry =` expression should use `BangModVanillaDirectionalMeleeParry`, not `bBoxParrySuccess`.
 - `bForceParry` should not bypass directional geometry.
 
 Full UnrealScript compile is still required. Standalone `.uci` lint can give false positives.

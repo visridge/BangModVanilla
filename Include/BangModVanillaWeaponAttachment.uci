@@ -1,0 +1,7 @@
+// BangModVanilla - BangModVanillaWeaponAttachment.uci
+// DEFAULTS ONLY. Include INSIDE the DefaultProperties block.
+// Functions for the same classes live in BangModVanillaWeaponAttachmentCode.uci, included at class level.
+
+// Default properties
+NetUpdateFrequency=120
+ParryTracersLength=67.0

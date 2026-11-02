@@ -1,6 +1,6 @@
-// XangMod - SiegeObjects.uci
-// Included via XangModGame.uci. Vars live in Game/Vars.uci; DefaultProperties in Game/Server.uci (last).
-// XANGMOD: Make catapults permanently destructible — once broken they stay a broken wreck for
+// BangModVanilla - SiegeObjects.uci
+// Included via BangModVanillaGame.uci. Vars live in Game/Vars.uci; DefaultProperties in Game/Server.uci (last).
+// BangModVanilla: Make catapults permanently destructible — once broken they stay a broken wreck for
 // the rest of the round instead of self-repairing.
 //
 // Catapults (AOCSWCatapult) are placed directly in maps as the AOC class, so we can't subclass
@@ -39,7 +39,7 @@ function DisableCatapultRespawns()
 }
 
 // ---------------------------------------------------------------------------
-// XANGMOD: Disable ballistae, catapults, and non-objective gates on Slumforest.
+// BangModVanilla: Disable ballistae, catapults, and non-objective gates on Slumforest.
 //
 // Ballistae / catapults: set health to zero and prevent repair so they stay as
 // broken wrecks (or are already destroyed).

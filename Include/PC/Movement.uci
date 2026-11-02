@@ -1,12 +1,12 @@
-// XangMod - Movement.uci
-// Included via XangModPlayerController.uci. Vars live in PC/Vars.uci; DefaultProperties in PC/Effects.uci (last).
+// BangModVanilla - Movement.uci
+// Included via BangModVanillaPlayerController.uci. Vars live in PC/Vars.uci; DefaultProperties in PC/Effects.uci (last).
 exec function Reload() {
-	if(!ScriptBlockedInputs[EINBLOCK_Reload] && XangModWeapon_Crossbow(Pawn.Weapon) != none)
-		XangModWeapon_Crossbow(Pawn.Weapon).ActivateReload();
+	if(!ScriptBlockedInputs[EINBLOCK_Reload] && BangModVanillaWeapon_Crossbow(Pawn.Weapon) != none)
+		BangModVanillaWeapon_Crossbow(Pawn.Weapon).ActivateReload();
 }
 
 exec function PerformAim() {
-	if (class<XangModWeapon_Crossbow>(Pawn.Weapon.Class) != none)
+	if (class<BangModVanillaWeapon_Crossbow>(Pawn.Weapon.Class) != none)
 		StartFire(1);
 }
 
@@ -16,7 +16,7 @@ exec function PerformFeint(optional bool bMeleeOnly = false)
 		return;
 
 	// Stop both local prediction and listen-server input immediately after a successful parry.
-	if (XangModPawn(Pawn) != none && XangModPawn(Pawn).IsPostParryFeintLockoutActive())
+	if (BangModVanillaPawn(Pawn) != none && BangModVanillaPawn(Pawn).IsPostParryFeintLockoutActive())
 		return;
 
 	if (bMeleeOnly && (AOCRangeWeapon(Pawn.Weapon) != none || !(Pawn.Weapon.IsInState('Windup') || Pawn.Weapon.IsInState('Transition'))))
@@ -57,7 +57,7 @@ reliable server function ServerPerformFeint()
 	local float TimeSinceLastFeint;
 
 	// Server-authoritative backstop for clients that predict input before the parry RPC arrives.
-	if (XangModPawn(Pawn) != none && XangModPawn(Pawn).IsPostParryFeintLockoutActive())
+	if (BangModVanillaPawn(Pawn) != none && BangModVanillaPawn(Pawn).IsPostParryFeintLockoutActive())
 		return;
 	
 	// Block feint if already in Active/Feint state
@@ -143,11 +143,11 @@ state PlayerWalking
 			
 			bLastMoveForward = bMoveForward;
 
-			// XANGMOD: Grand Lance stab charge — lock movement input to pure forward.
+			// BangModVanilla: Grand Lance stab charge — lock movement input to pure forward.
 			// aForward / aStrafe and the sprint-cancel check all read these axes below, so
 			// clamping here prevents S from triggering DisableSprint, removes backward/strafe
 			// acceleration from NewAccel, and stops A/D from deflecting the charge.
-			if (XangModPawn(Pawn) != none && XangModPawn(Pawn).bForceSprintForward)
+			if (BangModVanillaPawn(Pawn) != none && BangModVanillaPawn(Pawn).bForceSprintForward)
 			{
 				PlayerInput.aForward = 1.0;
 				PlayerInput.aStrafe  = 0.0;
@@ -226,7 +226,7 @@ state PlayerWalking
 				UpdateRotation( DeltaTime * AOCPawn(Pawn).ModAnimRate ); //update rotation !!!!!!!!!!!!!!! importantttttttttttttttttttttttttttttttttttttttttttttttttttttt!!!!!!!!!!!!!!!!!!!!!!!!!!!
 			bDoubleJump = false;
 			bPressedJump = bPressedJump && !ScriptBlockedInputs[EINBLOCK_Jump];
-			if( bPressedJump && Pawn.CannotJumpNow() && (XangModPawn(Pawn) == none || !XangModPawn(Pawn).CanAirJump()) )
+			if( bPressedJump && Pawn.CannotJumpNow() && (BangModVanillaPawn(Pawn) == none || !BangModVanillaPawn(Pawn).CanAirJump()) )
 			{
 				bSaveJump = true;
 				bPressedJump = false;

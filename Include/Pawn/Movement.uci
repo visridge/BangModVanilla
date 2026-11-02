@@ -1,5 +1,5 @@
-// XangMod - Movement.uci
-// Included via XangModPawn.uci. Vars live in Pawn/Vars.uci; DefaultProperties in Pawn/Camera.uci (last).
+// BangModVanilla - Movement.uci
+// Included via BangModVanillaPawn.uci. Vars live in Pawn/Vars.uci; DefaultProperties in Pawn/Camera.uci (last).
 function StartSprintRecovery() {
 	// Old code, but I will keep it here
 	/*if(IsTimerActive('EndSprintRecovery'))
@@ -10,7 +10,7 @@ function StartSprintRecovery() {
 	SetTimer(0.5f, false, 'EndSprintRecovery');*/
 }
 
-// XANGMOD: Override SprintState to block sprint-off during Grand Lance charge.
+// BangModVanilla: Override SprintState to block sprint-off during Grand Lance charge.
 // Prevents the player from resetting the sprint speed ramp by tapping the sprint key.
 exec function SprintState(optional bool bSprint = false, optional bool bForceToggleSprint)
 {
@@ -21,7 +21,7 @@ exec function SprintState(optional bool bSprint = false, optional bool bForceTog
 }
 
 
-// XANGMOD: Override ToggleSprint to prevent sprint-off from any source during charge.
+// BangModVanilla: Override ToggleSprint to prevent sprint-off from any source during charge.
 function ToggleSprint(bool bSprint, optional bool bForce)
 {
 	if (bForceSprintForward && !bSprint)
@@ -31,7 +31,7 @@ function ToggleSprint(bool bSprint, optional bool bForce)
 }
 
 
-// XANGMOD: Override PerformCrouch to block client-side crouch during Grand Lance charge.
+// BangModVanilla: Override PerformCrouch to block client-side crouch during Grand Lance charge.
 // PerformCrouch intentionally skips the bCanCrouch check (see AOCPawn comment), so without
 // this override a held crouch key would set bIsCrouching = true locally each frame even
 // though the server correctly rejects it via bCanCrouch. Blocking it here keeps the client
@@ -45,7 +45,7 @@ simulated function PerformCrouch(bool bCrouch)
 }
 
 
-// XANGMOD: Override ModifyVelocity to steer the Grand Lance stab charge in the full 3D
+// BangModVanilla: Override ModifyVelocity to steer the Grand Lance stab charge in the full 3D
 // direction the player is looking — pitch included. Gravity is intentionally suppressed each
 // frame by overwriting Velocity (Z included) with the look-direction vector, producing the
 // "witch's broom" effect: look up to fly up, look down to dive.
@@ -88,7 +88,7 @@ function ModifyVelocity(float DeltaTime, vector OldVelocity)
 
 	/*
 	bUsingBastardSword = Weapon != none
-		&& Weapon.Class == class'XangModWeapon_BastardSword';
+		&& Weapon.Class == class'BangModVanillaWeapon_BastardSword';
 
 	if (bUsingBastardSword)
 	{
@@ -122,7 +122,7 @@ function ModifyVelocity(float DeltaTime, vector OldVelocity)
 
 function int CalcDodgeCost() {
 	// Check if player is holding a Hatchet - use custom dodge cost
-	if (XangModWeapon_Hatchet(Weapon) != none) {
+	if (BangModVanillaWeapon_Hatchet(Weapon) != none) {
 		return 22;
 	}
 	
@@ -135,7 +135,7 @@ simulated function bool CanAirJump()
 {
 	/*
 	return Weapon != none
-		&& Weapon.Class == class'XangModWeapon_Kanabo'
+		&& Weapon.Class == class'BangModVanillaWeapon_Kanabo'
 		&& StateVariables.bCanJump
 		&& bJumpCapable
 		&& !bIsCrouching
@@ -333,18 +333,18 @@ simulated function FinishDodgeFlinch() {
 
 simulated function RestoreDodgeWeaponAttachment()
 {
-	if (XangModDodge(DodgeSM) != none)
+	if (BangModVanillaDodge(DodgeSM) != none)
 	{
-		XangModDodge(DodgeSM).RestoreOriginalWeaponAttachment();
+		BangModVanillaDodge(DodgeSM).RestoreOriginalWeaponAttachment();
 	}
 }
 
-/** Override to use XangModRoll (ninja-roll for Archer) with the shared weapon-identifier remap. */
+/** Override to use BangModVanillaRoll (ninja-roll for Archer) with the shared weapon-identifier remap. */
 simulated function VerifyDodgeSMInitialize()
 {
 	if (DodgeSM == none)
 	{
-		DodgeSM = new(Outer) class'XangModRoll';
+		DodgeSM = new(Outer) class'BangModVanillaRoll';
 		DodgeSM.OwnerPawn = self;
 	}
 }

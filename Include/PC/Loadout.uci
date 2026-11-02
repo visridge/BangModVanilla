@@ -1,5 +1,5 @@
-// XangMod - Loadout.uci
-// Included via XangModPlayerController.uci. Vars live in PC/Vars.uci; DefaultProperties in PC/Effects.uci (last).
+// BangModVanilla - Loadout.uci
+// Included via BangModVanillaPlayerController.uci. Vars live in PC/Vars.uci; DefaultProperties in PC/Effects.uci (last).
 exec function GetAdmins() {
 	S_GetAdmins();
 }
@@ -115,9 +115,9 @@ exec function SetAssassinCustom(int TeamIndex, string Field, int Value, optional
 	Faction = (TeamIndex == 0) ? EFAC_AGATHA : EFAC_MASON;
 
 	// Read the current Assassin choices through the same path the UI uses.
-	Choices = class'XangModCustomization'.static.LocalGetCustomizationChoices(Faction, 4);
-	class'XangModCustomization'.static.LocalGetSelectedWeaponDrops(Faction, 4, WeaponDrops, AOCPRI(PlayerReplicationInfo));
-	FavIcon = class'XangModCustomization'.static.LocalGetFactionSupporterId();
+	Choices = class'BangModVanillaCustomization'.static.LocalGetCustomizationChoices(Faction, 4);
+	class'BangModVanillaCustomization'.static.LocalGetSelectedWeaponDrops(Faction, 4, WeaponDrops, AOCPRI(PlayerReplicationInfo));
+	FavIcon = class'BangModVanillaCustomization'.static.LocalGetFactionSupporterId();
 
 	Field = Locs(Field);
 
@@ -156,7 +156,7 @@ exec function SetAssassinCustom(int TeamIndex, string Field, int Value, optional
 	}
 
 	// Persist to the local Customization.ini (mirrors the menu's SaveChoices).
-	class'XangModCustomization'.static.LocalSetCustomizationChoices(Choices, Faction, 4, WeaponDrops, FavIcon);
+	class'BangModVanillaCustomization'.static.LocalSetCustomizationChoices(Choices, Faction, 4, WeaponDrops, FavIcon);
 
 	// If the player is CURRENTLY the Assassin, push the change to the server so it
 	// applies to the next spawn without reconnecting (same sync the menu does).

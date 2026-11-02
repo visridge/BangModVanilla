@@ -1,4 +1,4 @@
-// SlumpMod ranked LTS backend (ported from MustMod). Called by XangModRanked.uc on LTS game servers as
+// SlumpMod ranked LTS backend (ported from MustMod). Called by BangModVanillaRanked.uc on LTS game servers as
 //   POST /functions/v1/ranked/<action>   header x-server-token, JSON body, JSON reply
 //
 // Actions: ping, connect, matchmake, result, abandon, cancel. Matchmaking and every Elo

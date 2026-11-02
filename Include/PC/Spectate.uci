@@ -1,9 +1,9 @@
-// XangMod - Spectate.uci
-// Included via XangModPlayerController.uci. Vars live in PC/Vars.uci; DefaultProperties in PC/Effects.uci (last).
+// BangModVanilla - Spectate.uci
+// Included via BangModVanillaPlayerController.uci. Vars live in PC/Vars.uci; DefaultProperties in PC/Effects.uci (last).
 /** One-line camera dump to the log. Use with the FPSpectateDebug exec when chasing camera bugs. */
-simulated function XangModLogCameraState(string Tag)
+simulated function BangModVanillaLogCameraState(string Tag)
 {
-	LogAlwaysInternal("[XangModFPSpec]" @ Tag
+	LogAlwaysInternal("[BangModVanillaFPSpec]" @ Tag
 		@ "State=" $ GetStateName()
 		@ "Pawn=" $ Pawn
 		@ "ViewTarget=" $ ViewTarget
@@ -14,14 +14,14 @@ simulated function XangModLogCameraState(string Tag)
 }
 
 /** Fired on a short timer from ClientRestart, after EnterStartState has run. */
-simulated function XangModFixCameraAfterSpawn()
+simulated function BangModVanillaFixCameraAfterSpawn()
 {
 	local AOCPawn MyPawn;
 
 	if (!IsLocalPlayerController())
 		return;
 
-	XangModLogCameraState("post-spawn");
+	BangModVanillaLogCameraState("post-spawn");
 
 	if (Pawn == none || IsInState('Spectating') || IsInState('SpecialSpectating'))
 		return;
@@ -53,7 +53,7 @@ simulated function XangModFixCameraAfterSpawn()
 	// onto the spectator camera position every frame.
 	SetLocation(Pawn.Location);
 
-	XangModLogCameraState("post-spawn-corrected");
+	BangModVanillaLogCameraState("post-spawn-corrected");
 }
 
 reliable client function ClientRestart(Pawn NewPawn)
@@ -61,7 +61,7 @@ reliable client function ClientRestart(Pawn NewPawn)
 	super.ClientRestart(NewPawn);
 
 	if (NewPawn != none && IsLocalPlayerController())
-		SetTimer(0.05f, false, 'XangModFixCameraAfterSpawn');
+		SetTimer(0.05f, false, 'BangModVanillaFixCameraAfterSpawn');
 }
 
 /* ************************************************************************
@@ -72,7 +72,7 @@ reliable client function ClientRestart(Pawn NewPawn)
  * state Spectating.ViewAPlayer force-calls SetBehindView(true) and BehindView() is an
  * empty stub.
  *
- * XangMod re-declares state Spectating to route target changes through it. Once
+ * BangModVanilla re-declares state Spectating to route target changes through it. Once
  * bIsBeingFPObserved is actually set, the hand-rolled workarounds are unnecessary:
  * AOCPlayerCamera.UpdateCamera takes its FP branch and zeroes CameraRotation.Roll
  * (the sprint-lean tilt fix), and SetThirdPersonCamera(false) shows the 1P mesh so
@@ -92,7 +92,7 @@ reliable client function ClientRestart(Pawn NewPawn)
  * so it is none on most pawns, and SetThirdPersonCamera dereferences it unguarded anyway --
  * requiring it refused first person for nearly everyone and bought no safety.
  */
-simulated function string XangModFPObserveBlocker(AOCPawn P)
+simulated function string BangModVanillaFPObserveBlocker(AOCPawn P)
 {
 	if (P == none)
 		return "pawn is none";
@@ -116,9 +116,9 @@ simulated function string XangModFPObserveBlocker(AOCPawn P)
 	return "";
 }
 
-simulated function bool XangModCanFPObserve(AOCPawn P)
+simulated function bool BangModVanillaCanFPObserve(AOCPawn P)
 {
-	return XangModFPObserveBlocker(P) == "";
+	return BangModVanillaFPObserveBlocker(P) == "";
 }
 
 /**
@@ -130,56 +130,56 @@ simulated function bool XangModCanFPObserve(AOCPawn P)
  * before the flag is set. Vanilla's own order leaves the pawn flagged for a 1P camera but
  * visually in 3P, which is the "inside the head" view. The meshes are put back afterwards.
  */
-simulated function bool XangModApplyFPObserve(AOCPawn P)
+simulated function bool BangModVanillaApplyFPObserve(AOCPawn P)
 {
 	local string Blocker;
 
 	if (P == none || !IsLocalPlayerController())
 		return false;
 
-	Blocker = XangModFPObserveBlocker(P);
+	Blocker = BangModVanillaFPObserveBlocker(P);
 	if (Blocker != "")
 	{
 		// Once per pawn: silence is what made this hard to diagnose the first time.
-		if (XangModFPBlockLoggedPawn != P)
+		if (BangModVanillaFPBlockLoggedPawn != P)
 		{
-			XangModFPBlockLoggedPawn = P;
-			LogAlwaysInternal("[XangModFPSpec] first person refused for"@P$":"@Blocker);
+			BangModVanillaFPBlockLoggedPawn = P;
+			LogAlwaysInternal("[BangModVanillaFPSpec] first person refused for"@P$":"@Blocker);
 		}
 		return false;
 	}
 
-	if (XangModFPObservedPawn != none && XangModFPObservedPawn != P)
-		XangModClearFPObserve();
+	if (BangModVanillaFPObservedPawn != none && BangModVanillaFPObservedPawn != P)
+		BangModVanillaClearFPObserve();
 
 	SetBehindView(false);
 	P.SetThirdPersonCamera(false);
 
-	XangModFPObservedPawn = P;
+	BangModVanillaFPObservedPawn = P;
 	return true;
 }
 
 /**
- * Undoes XangModApplyFPObserve on whichever pawn we last applied it to.
+ * Undoes BangModVanillaApplyFPObserve on whichever pawn we last applied it to.
  * AOCPawn.EndViewTarget() clears bIsBeingFPObserved / CurrentObserver but does
  * NOT restore mesh visibility, so a pawn we stop following would keep its 1P
  * mesh unhidden and its 3P body flagged owner-no-see.
  */
-simulated function XangModClearFPObserve()
+simulated function BangModVanillaClearFPObserve()
 {
 	local AOCPawn P;
 
-	if (XangModFPObservedPawn == none)
+	if (BangModVanillaFPObservedPawn == none)
 		return;
 
-	P = XangModFPObservedPawn;
-	XangModFPObservedPawn = none;
+	P = BangModVanillaFPObservedPawn;
+	BangModVanillaFPObservedPawn = none;
 
 	P.bIsBeingFPObserved = false;
 	if (P.CurrentObserver == self)
 		P.CurrentObserver = none;
 
-	if (XangModCanFPObserve(P))
+	if (BangModVanillaCanFPObserve(P))
 		P.SetThirdPersonCamera(true);
 }
 
@@ -192,7 +192,7 @@ simulated function XangModClearFPObserve()
  * setting the flags directly in that window; PlayerTick re-establishes properly
  * once a real target arrives.
  */
-simulated function XangModRestoreVanillaCamera()
+simulated function BangModVanillaRestoreVanillaCamera()
 {
 	if (WorldInfo.GRI != none)
 	{
@@ -218,7 +218,7 @@ simulated function XangModRestoreVanillaCamera()
  * found, so this does not claim to fix a proven cause -- it enforces the rule everywhere we
  * control and counts refusals, so FPSpectateDebug can say whether the server gate leaks.
  */
-simulated function bool XangModMayView(PlayerReplicationInfo TargetPRI)
+simulated function bool BangModVanillaMayView(PlayerReplicationInfo TargetPRI)
 {
 	local AOCPRI MyPRI;
 
@@ -239,14 +239,14 @@ simulated function bool XangModMayView(PlayerReplicationInfo TargetPRI)
 }
 
 /** Records a refusal so FPSpectateDebug can report whether this ever actually fires. */
-simulated function XangModNoteViewBlock(name Where)
+simulated function BangModVanillaNoteViewBlock(name Where)
 {
-	iXangModViewBlocks++;
-	nXangModViewBlockWhere = Where;
+	iBangModVanillaViewBlocks++;
+	nBangModVanillaViewBlockWhere = Where;
 }
 
 /** Applies whichever perspective the spectator currently wants to the current view target. */
-simulated function XangModApplySpectatorPerspective()
+simulated function BangModVanillaApplySpectatorPerspective()
 {
 	local AOCPawn P;
 
@@ -258,27 +258,27 @@ simulated function XangModApplySpectatorPerspective()
 	// Never put a player into first person on somebody they are not allowed to watch.
 	// First person is the worst case of the leak: it hands over the exact view, the
 	// health and stamina bars, and any HUD marker that pawn's team can see.
-	if (P != none && !XangModMayView(P.PlayerReplicationInfo))
+	if (P != none && !BangModVanillaMayView(P.PlayerReplicationInfo))
 	{
-		XangModNoteViewBlock('Perspective');
+		BangModVanillaNoteViewBlock('Perspective');
 		P = none;
 	}
 
 	if (P == none || P.Health <= 0)
 	{
-		XangModClearFPObserve();
-		XangModPerspectivePawn = none;
+		BangModVanillaClearFPObserve();
+		BangModVanillaPerspectivePawn = none;
 
 		// SetBehindView(false) cleared bFreeCamera (UTPlayerController.SetBehindView).
 		// Hand it back, or the free camera can neither move nor look around --
 		// state Spectating.PlayerMove early-outs on !bFreeCamera before UpdateRotation.
-		XangModRestoreVanillaCamera();
+		BangModVanillaRestoreVanillaCamera();
 		return;
 	}
 
-	XangModPerspectivePawn = P;
+	BangModVanillaPerspectivePawn = P;
 
-	if (bXangModFPSpectate && XangModApplyFPObserve(P))
+	if (bBangModVanillaFPSpectate && BangModVanillaApplyFPObserve(P))
 		return;
 
 	// Either the spectator asked for the orbit follow, or this pawn cannot be
@@ -290,8 +290,8 @@ simulated function XangModApplySpectatorPerspective()
 	// state the controller is left running on whatever bBehindView / bFreeCamera
 	// happened to be left over -- which is how you end up with a camera that is
 	// neither following anybody nor accepting input.
-	XangModClearFPObserve();
-	XangModRestoreVanillaCamera(); // state Spectating.SetBehindView re-enables bFreeCamera
+	BangModVanillaClearFPObserve();
+	BangModVanillaRestoreVanillaCamera(); // state Spectating.SetBehindView re-enables bFreeCamera
 }
 
 /**
@@ -306,7 +306,7 @@ simulated function XangModApplySpectatorPerspective()
  * So assert the desired state every tick instead. Throttled to a visibility re-assert twice
  * a second plus a value push only on change. Never HIDES -- vanilla owns that.
  */
-simulated function XangModEnforceLifeBars()
+simulated function BangModVanillaEnforceLifeBars()
 {
 	local AOCBaseHUD H;
 	local AOCPawn Subject;
@@ -331,42 +331,42 @@ simulated function XangModEnforceLifeBars()
 		// no team test, so it pushed health and stamina for whatever the view target
 		// happened to be -- including an enemy on the death camera, in any state, not
 		// just while spectating. That was this function's bug, not vanilla's.
-		if (Subject != none && !XangModMayView(Subject.PlayerReplicationInfo))
+		if (Subject != none && !BangModVanillaMayView(Subject.PlayerReplicationInfo))
 		{
-			XangModNoteViewBlock('LifeBars');
+			BangModVanillaNoteViewBlock('LifeBars');
 			Subject = none;
 		}
 	}
 
 	if (Subject == none || Subject.Health <= 0)
 	{
-		XangModLifeBarPawn = none;
+		BangModVanillaLifeBarPawn = none;
 		return;
 	}
 
 	// Re-assert visibility whenever the subject changes, and twice a second after
 	// that, so anything which hides the bars behind our back is corrected quickly.
-	if (Subject != XangModLifeBarPawn || WorldInfo.TimeSeconds >= fXangModNextLifeBarAssert)
+	if (Subject != BangModVanillaLifeBarPawn || WorldInfo.TimeSeconds >= fBangModVanillaNextLifeBarAssert)
 	{
-		XangModLifeBarPawn = Subject;
-		fXangModNextLifeBarAssert = WorldInfo.TimeSeconds + 0.5f;
+		BangModVanillaLifeBarPawn = Subject;
+		fBangModVanillaNextLifeBarAssert = WorldInfo.TimeSeconds + 0.5f;
 
 		H.DisplayCompleteHUD();
 
 		// Force a value push on the next two tests regardless of the change filter.
-		iXangModLastHealthShown = -1;
-		fXangModLastStaminaShown = -1.f;
+		iBangModVanillaLastHealthShown = -1;
+		fBangModVanillaLastStaminaShown = -1.f;
 	}
 
-	if (Subject.Health != iXangModLastHealthShown)
+	if (Subject.Health != iBangModVanillaLastHealthShown)
 	{
-		iXangModLastHealthShown = Subject.Health;
+		iBangModVanillaLastHealthShown = Subject.Health;
 		H.SetHealthValues(Subject.Health, Subject.HealthMax);
 	}
 
-	if (Subject.Stamina != fXangModLastStaminaShown)
+	if (Subject.Stamina != fBangModVanillaLastStaminaShown)
 	{
-		fXangModLastStaminaShown = Subject.Stamina;
+		fBangModVanillaLastStaminaShown = Subject.Stamina;
 		H.SetStaminaValues(Subject.Stamina, Subject.MaxStamina);
 	}
 }
@@ -386,7 +386,7 @@ simulated function XangModEnforceLifeBars()
  *
  * Gated on Pawn == none: weapon zoom drives DesiredFOV in live play and must not be fought.
  */
-simulated function XangModEnforceSpectateFOV(name Where)
+simulated function BangModVanillaEnforceSpectateFOV(name Where)
 {
 	if (!IsLocalPlayerController() || Pawn != none)
 		return;
@@ -401,12 +401,12 @@ simulated function XangModEnforceSpectateFOV(name Where)
 
 	// Record what we caught, so FPSpectateDebug can finally name the culprit.
 	if (FOVAngle != MyFOV)
-		fXangModFOVCaught = FOVAngle;
+		fBangModVanillaFOVCaught = FOVAngle;
 	else if (DesiredFOV != MyFOV)
-		fXangModFOVCaught = DesiredFOV;
+		fBangModVanillaFOVCaught = DesiredFOV;
 	else
-		fXangModFOVCaught = DefaultFOV;
-	nXangModFOVCaughtWhere = Where;
+		fBangModVanillaFOVCaught = DefaultFOV;
+	nBangModVanillaFOVCaughtWhere = Where;
 
 	DefaultFOV = MyFOV;
 	DesiredFOV = MyFOV;
@@ -416,25 +416,25 @@ simulated function XangModEnforceSpectateFOV(name Where)
 /** Console toggle, in case somebody wants to default to the vanilla orbit follow. */
 exec function FirstPersonSpectate(optional bool bEnable = true)
 {
-	bXangModFPSpectate = bEnable;
+	bBangModVanillaFPSpectate = bEnable;
 	if (IsInState('Spectating'))
-		XangModApplySpectatorPerspective();
+		BangModVanillaApplySpectatorPerspective();
 }
 
 /**
  * Diagnostic for first-person spectate. Type "FPSpectateDebug" in the console
  * while following a player.
  *
- * The usual failure is "OwnerMesh: None" -- see XangModEnsureOwnerMesh in
- * XangModPawn.uci for why the 1P mesh gets stripped and how it is rebuilt.
+ * The usual failure is "OwnerMesh: None" -- see BangModVanillaEnsureOwnerMesh in
+ * BangModVanillaPawn.uci for why the 1P mesh gets stripped and how it is rebuilt.
  */
 exec function FPSpectateDebug()
 {
 	local AOCPawn P;
 
-	ClientDisplayConsoleMessage("---- XangMod camera / spectate state ----");
+	ClientDisplayConsoleMessage("---- BangModVanilla camera / spectate state ----");
 	ClientDisplayConsoleMessage("State:" @ GetStateName() @ "| NetMode:" @ int(WorldInfo.NetMode) @ "| LocalPC:" @ IsLocalPlayerController());
-	ClientDisplayConsoleMessage("bXangModFPSpectate:" @ bXangModFPSpectate @ "| bBehindView:" @ bBehindView @ "| bFreeCamera:" @ bFreeCamera);
+	ClientDisplayConsoleMessage("bBangModVanillaFPSpectate:" @ bBangModVanillaFPSpectate @ "| bBehindView:" @ bBehindView @ "| bFreeCamera:" @ bFreeCamera);
 	ClientDisplayConsoleMessage("Pawn:" @ Pawn);
 	ClientDisplayConsoleMessage("ViewTarget:" @ ViewTarget @ "| RealViewTarget:" @ RealViewTarget);
 
@@ -442,17 +442,17 @@ exec function FPSpectateDebug()
 	// engine reads the view straight off it and ignores Pawn/ViewTarget entirely.
 	ClientDisplayConsoleMessage("PlayerCamera:" @ PlayerCamera @ " <-- should be None during normal play");
 	ClientDisplayConsoleMessage("FOV: MyFOV=" $ MyFOV @ "Default=" $ DefaultFOV @ "Desired=" $ DesiredFOV @ "Angle=" $ FOVAngle);
-	if (iXangModViewBlocks > 0)
-		ClientDisplayConsoleMessage("Team lock: refused" @ iXangModViewBlocks @ "out-of-team view target(s), last in" @ nXangModViewBlockWhere);
+	if (iBangModVanillaViewBlocks > 0)
+		ClientDisplayConsoleMessage("Team lock: refused" @ iBangModVanillaViewBlocks @ "out-of-team view target(s), last in" @ nBangModVanillaViewBlockWhere);
 	else
 		ClientDisplayConsoleMessage("Team lock: no out-of-team view target has been refused.");
 
-	if (nXangModFOVCaughtWhere != '')
-		ClientDisplayConsoleMessage("FOV lock: last corrected a stray" @ fXangModFOVCaught @ "in" @ nXangModFOVCaughtWhere);
+	if (nBangModVanillaFOVCaughtWhere != '')
+		ClientDisplayConsoleMessage("FOV lock: last corrected a stray" @ fBangModVanillaFOVCaught @ "in" @ nBangModVanillaFOVCaughtWhere);
 	else
 		ClientDisplayConsoleMessage("FOV lock: has not had to correct anything yet.");
 
-	ClientDisplayConsoleMessage("FPObservedPawn:" @ XangModFPObservedPawn @ "| PerspectivePawn:" @ XangModPerspectivePawn);
+	ClientDisplayConsoleMessage("FPObservedPawn:" @ BangModVanillaFPObservedPawn @ "| PerspectivePawn:" @ BangModVanillaPerspectivePawn);
 
 	if (Pawn != none && ViewTarget != Pawn)
 		ClientDisplayConsoleMessage("!! ViewTarget is not our own Pawn while we have one -- that is the frozen-camera signature.");
@@ -480,10 +480,10 @@ exec function FPSpectateDebug()
 	ClientDisplayConsoleMessage("HelmetMeshComp:" @ P.HelmetMeshComp @ "| HelmetEmitter:" @ P.HelmetEmitter);
 	ClientDisplayConsoleMessage("ShieldMesh:" @ P.ShieldMesh @ "| OverlayShieldMesh:" @ P.OverlayShieldMesh);
 	ClientDisplayConsoleMessage("WeaponAttachment:" @ AOCWeaponAttachment(P.CurrentWeaponAttachment));
-	if (XangModCanFPObserve(P))
+	if (BangModVanillaCanFPObserve(P))
 		ClientDisplayConsoleMessage("=> CanFPObserve: TRUE");
 	else
-		ClientDisplayConsoleMessage("=> CanFPObserve: FALSE --" @ XangModFPObserveBlocker(P));
+		ClientDisplayConsoleMessage("=> CanFPObserve: FALSE --" @ BangModVanillaFPObserveBlocker(P));
 	ClientDisplayConsoleMessage("---------------------------------------");
 }
 
@@ -494,27 +494,27 @@ state Spectating
 		super.BeginState(PreviousStateName);
 
 		// super sets SetViewTarget(none), so nothing is observed yet.
-		XangModFPObservedPawn = none;
-		XangModHUDPawn = none;
-		XangModPerspectivePawn = none;
+		BangModVanillaFPObservedPawn = none;
+		BangModVanillaHUDPawn = none;
+		BangModVanillaPerspectivePawn = none;
 
 		// Claim the field of view the moment we arrive, before the first frame renders.
-		XangModEnforceSpectateFOV('BeginState');
+		BangModVanillaEnforceSpectateFOV('BeginState');
 	}
 
 	function EndState(Name NextStateName)
 	{
-		XangModClearFPObserve();
+		BangModVanillaClearFPObserve();
 
 		// Deliberately does NOT touch the HUD. An earlier version called
 		// ClearHUDOnDeath() here and cost every player their bars, crosshair and ammo
 		// count for a whole life: on spawn the server's Possess() fires
 		// ShowHUDElements() -> DisplayCompleteHUD() BEFORE ClientRestart() reaches
 		// EnterStartState(), so hiding here undid vanilla a moment after it showed them.
-		// XangModEnforceLifeBars() now owns bar visibility; vanilla owns hiding on death.
-		XangModLifeBarPawn = none;
-		XangModHUDPawn = none;
-		XangModPerspectivePawn = none;
+		// BangModVanillaEnforceLifeBars() now owns bar visibility; vanilla owns hiding on death.
+		BangModVanillaLifeBarPawn = none;
+		BangModVanillaHUDPawn = none;
+		BangModVanillaPerspectivePawn = none;
 
 		super.EndState(NextStateName);
 	}
@@ -538,12 +538,12 @@ state Spectating
 
 		// Belt and braces on top of GetNextViewablePlayer, which already consults
 		// AOCGame.CanSpectate for every candidate. If that gate works this is dead code
-		// and iXangModViewBlocks stays at zero; if it is leaking, this stops it here on
+		// and iBangModVanillaViewBlocks stays at zero; if it is leaking, this stops it here on
 		// the server -- where it matters, since a client cannot be trusted to refuse a
 		// view target it has already been given.
-		if (!XangModMayView(PRI))
+		if (!BangModVanillaMayView(PRI))
 		{
-			XangModNoteViewBlock('ViewAPlayer');
+			BangModVanillaNoteViewBlock('ViewAPlayer');
 			return;
 		}
 
@@ -560,14 +560,14 @@ state Spectating
 	{
 		// Restore the outgoing pawn before the native SetViewTarget inside super
 		// fires EndViewTarget on it (EndViewTarget does not restore its meshes).
-		if (XangModFPObservedPawn != none && XangModFPObservedPawn != A)
-			XangModClearFPObserve();
+		if (BangModVanillaFPObservedPawn != none && BangModVanillaFPObservedPawn != A)
+			BangModVanillaClearFPObserve();
 
 		super.ClientSetViewTarget(A, TransitionParams);
 
-		XangModApplySpectatorPerspective();
+		BangModVanillaApplySpectatorPerspective();
 
-		XangModHUDPawn = AOCPawn(ViewTarget);
+		BangModVanillaHUDPawn = AOCPawn(ViewTarget);
 	}
 
 	/**
@@ -597,8 +597,8 @@ state Spectating
 		if (AOCPawn(ViewTarget) == none)
 			return; // free camera / nobody followed -- nothing to toggle
 
-		bXangModFPSpectate = !bXangModFPSpectate;
-		XangModApplySpectatorPerspective();
+		bBangModVanillaFPSpectate = !bBangModVanillaFPSpectate;
+		BangModVanillaApplySpectatorPerspective();
 	}
 
 	/** Same key path, reached via UTPlayerController.BehindView bindings. */
@@ -610,7 +610,7 @@ state Spectating
 	/** Camera angles only mean anything in the orbit follow. */
 	exec function NextCameraAngle()
 	{
-		if (bXangModFPSpectate && AOCPawn(ViewTarget) != none)
+		if (bBangModVanillaFPSpectate && AOCPawn(ViewTarget) != none)
 			return;
 
 		iThirdPersonAngle = 1;
@@ -619,15 +619,15 @@ state Spectating
 	/** Right click. */
 	exec function SpectatorFreecam()
 	{
-		XangModClearFPObserve();
+		BangModVanillaClearFPObserve();
 		super.SpectatorFreecam();
 
 		// Restore bFreeCamera, which SetBehindView(false) zeroed on the way into
 		// first person. Without this the free camera is frozen in place.
 		SetBehindView(true);
 
-		XangModHUDPawn = none;
-		XangModPerspectivePawn = none;
+		BangModVanillaHUDPawn = none;
+		BangModVanillaPerspectivePawn = none;
 	}
 
 	/**
@@ -636,12 +636,12 @@ state Spectating
 	 * Vanilla's version hands FOVAngle to ViewTarget.CalcCamera as an out parameter, so
 	 * a view target is free to overwrite the spectator's field of view every single
 	 * frame -- which a tick-time correction would lose to, since tick runs first.
-	 * Re-asserting here closes that ordering hole; see XangModEnforceSpectateFOV.
+	 * Re-asserting here closes that ordering hole; see BangModVanillaEnforceSpectateFOV.
 	 */
 	simulated event GetPlayerViewPoint( out vector POVLocation, out Rotator POVRotation )
 	{
 		super.GetPlayerViewPoint(POVLocation, POVRotation);
-		XangModEnforceSpectateFOV('GetPlayerViewPoint');
+		BangModVanillaEnforceSpectateFOV('GetPlayerViewPoint');
 	}
 
 	event PlayerTick(float DeltaTime)
@@ -651,7 +651,7 @@ state Spectating
 		super.PlayerTick(DeltaTime);
 
 		// Covers whatever moves the value outside the render path.
-		XangModEnforceSpectateFOV('PlayerTick');
+		BangModVanillaEnforceSpectateFOV('PlayerTick');
 
 		if (!IsLocalPlayerController())
 			return;
@@ -662,33 +662,33 @@ state Spectating
 
 		if (P == none)
 		{
-			if (XangModFPObservedPawn != none)
+			if (BangModVanillaFPObservedPawn != none)
 			{
-				XangModClearFPObserve();
-				XangModPerspectivePawn = none;
-				XangModRestoreVanillaCamera();
+				BangModVanillaClearFPObserve();
+				BangModVanillaPerspectivePawn = none;
+				BangModVanillaRestoreVanillaCamera();
 			}
 		}
-		else if (XangModPerspectivePawn != P)
+		else if (BangModVanillaPerspectivePawn != P)
 		{
 			// New pawn (target switch, or the old one respawned as a new object).
 			// Establish a definite camera state exactly once.
-			XangModApplySpectatorPerspective();
+			BangModVanillaApplySpectatorPerspective();
 		}
-		else if (bXangModFPSpectate && !P.bIsBeingFPObserved)
+		else if (bBangModVanillaFPSpectate && !P.bIsBeingFPObserved)
 		{
 			// Keep retrying first person on the pawn we already settled on.
 			if (P.OwnerMesh != none)
 			{
-				XangModApplyFPObserve(P);
+				BangModVanillaApplyFPObserve(P);
 			}
-			else if (WorldInfo.TimeSeconds >= fXangModNextFPRetry)
+			else if (WorldInfo.TimeSeconds >= fBangModVanillaNextFPRetry)
 			{
 				// The 1P mesh is rebuilt by the pawn's BecomeViewTarget override, which
 				// only fires on a view-target change. If its character assets had not
 				// streamed in by then, nothing would ever try again -- so poke it. Rate
 				// limited so a pawn that genuinely cannot be rebuilt costs us nothing.
-				fXangModNextFPRetry = WorldInfo.TimeSeconds + 0.5f;
+				fBangModVanillaNextFPRetry = WorldInfo.TimeSeconds + 0.5f;
 				P.BecomeViewTarget(self);
 			}
 		}
@@ -706,7 +706,7 @@ state Spectating
 			P.OwnerAimNode.Aim.Y = P.AimNode.Aim.Y;
 		}
 
-		XangModHUDPawn = P;
+		BangModVanillaHUDPawn = P;
 	}
 }
 

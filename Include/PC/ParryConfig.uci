@@ -1,25 +1,25 @@
-// XangMod - ParryConfig.uci
-// Included via XangModPlayerController.uci. Vars live in PC/Vars.uci; DefaultProperties in PC/Effects.uci (last).
-simulated function SetAllParryBoxClassDefaults(bool bEnableXangMod, bool bEnableSkeletal)
+// BangModVanilla - ParryConfig.uci
+// Included via BangModVanillaPlayerController.uci. Vars live in PC/Vars.uci; DefaultProperties in PC/Effects.uci (last).
+simulated function SetAllParryBoxClassDefaults(bool bEnableBangModVanilla, bool bEnableSkeletal)
 {
-	class'XangModAOCDuelPlayerController'.default.bXangModParryBox = bEnableXangMod;
-	class'XangModAOCDuelPlayerController'.default.bSkeletalParry = bEnableSkeletal;
-	class'XangModCDWDuelPlayerController'.default.bXangModParryBox = bEnableXangMod;
-	class'XangModCDWDuelPlayerController'.default.bSkeletalParry = bEnableSkeletal;
-	class'XangModCTFPlayerController'.default.bXangModParryBox = bEnableXangMod;
-	class'XangModCTFPlayerController'.default.bSkeletalParry = bEnableSkeletal;
-	class'XangModFFAPlayerController'.default.bXangModParryBox = bEnableXangMod;
-	class'XangModFFAPlayerController'.default.bSkeletalParry = bEnableSkeletal;
-	class'XangModKOTHPlayerController'.default.bXangModParryBox = bEnableXangMod;
-	class'XangModKOTHPlayerController'.default.bSkeletalParry = bEnableSkeletal;
-	class'XangModLTSPlayerController'.default.bXangModParryBox = bEnableXangMod;
-	class'XangModLTSPlayerController'.default.bSkeletalParry = bEnableSkeletal;
-	class'XangModTDPlayerController'.default.bXangModParryBox = bEnableXangMod;
-	class'XangModTDPlayerController'.default.bSkeletalParry = bEnableSkeletal;
-	class'XangModTOPlayerController'.default.bXangModParryBox = bEnableXangMod;
-	class'XangModTOPlayerController'.default.bSkeletalParry = bEnableSkeletal;
-	class'XangModTUTPlayerController'.default.bXangModParryBox = bEnableXangMod;
-	class'XangModTUTPlayerController'.default.bSkeletalParry = bEnableSkeletal;
+	class'BangModVanillaAOCDuelPlayerController'.default.bBangModVanillaParryBox = bEnableBangModVanilla;
+	class'BangModVanillaAOCDuelPlayerController'.default.bSkeletalParry = bEnableSkeletal;
+	class'BangModVanillaCDWDuelPlayerController'.default.bBangModVanillaParryBox = bEnableBangModVanilla;
+	class'BangModVanillaCDWDuelPlayerController'.default.bSkeletalParry = bEnableSkeletal;
+	class'BangModVanillaCTFPlayerController'.default.bBangModVanillaParryBox = bEnableBangModVanilla;
+	class'BangModVanillaCTFPlayerController'.default.bSkeletalParry = bEnableSkeletal;
+	class'BangModVanillaFFAPlayerController'.default.bBangModVanillaParryBox = bEnableBangModVanilla;
+	class'BangModVanillaFFAPlayerController'.default.bSkeletalParry = bEnableSkeletal;
+	class'BangModVanillaKOTHPlayerController'.default.bBangModVanillaParryBox = bEnableBangModVanilla;
+	class'BangModVanillaKOTHPlayerController'.default.bSkeletalParry = bEnableSkeletal;
+	class'BangModVanillaLTSPlayerController'.default.bBangModVanillaParryBox = bEnableBangModVanilla;
+	class'BangModVanillaLTSPlayerController'.default.bSkeletalParry = bEnableSkeletal;
+	class'BangModVanillaTDPlayerController'.default.bBangModVanillaParryBox = bEnableBangModVanilla;
+	class'BangModVanillaTDPlayerController'.default.bSkeletalParry = bEnableSkeletal;
+	class'BangModVanillaTOPlayerController'.default.bBangModVanillaParryBox = bEnableBangModVanilla;
+	class'BangModVanillaTOPlayerController'.default.bSkeletalParry = bEnableSkeletal;
+	class'BangModVanillaTUTPlayerController'.default.bBangModVanillaParryBox = bEnableBangModVanilla;
+	class'BangModVanillaTUTPlayerController'.default.bSkeletalParry = bEnableSkeletal;
 }
 
 // Parry-box hits are traced on the ATTACKER's client, so every pawn on every client needs the server's box.
@@ -33,12 +33,12 @@ simulated function ApplyParryBoxSettingsToAllPawns()
 		if (P.ParryComponent == none || P.PawnFamily == none)
 			continue;
 
-		if (!class'XangModAOCDuelPlayerController'.default.bXangModParryBox)
+		if (!class'BangModVanillaAOCDuelPlayerController'.default.bBangModVanillaParryBox)
 		{
 			P.ParryComponent.SetScale3D(vect(0.1, 0.17, 0.35));
 			P.ParryComponent.SetTranslation(vect(30, 0, -30));
 		}
-		else if (class'XangModAOCDuelPlayerController'.default.bSkeletalParry)
+		else if (class'BangModVanillaAOCDuelPlayerController'.default.bSkeletalParry)
 		{
 			P.ParryComponent.SetScale3D(vect(0.32, 0.32, 0.45));
 			P.ParryComponent.SetTranslation(vect(0, 0, -45));
@@ -56,17 +56,17 @@ simulated function ApplyParryBoxSettingsToAllPawns()
 }
 
 // Server: push the parry box settings to every player, not just the admin who changed them.
-function XangModSyncParryBoxToAll()
+function BangModVanillaSyncParryBoxToAll()
 {
 	local `{GAMEMODE}PlayerController PC;
 
 	foreach WorldInfo.AllControllers(class'`{GAMEMODE}PlayerController', PC)
-		PC.ClientSyncParryBoxSettings(class'XangModAOCDuelPlayerController'.default.bXangModParryBox,
-			class'XangModAOCDuelPlayerController'.default.bSkeletalParry);
+		PC.ClientSyncParryBoxSettings(class'BangModVanillaAOCDuelPlayerController'.default.bBangModVanillaParryBox,
+			class'BangModVanillaAOCDuelPlayerController'.default.bSkeletalParry);
 }
 
 // Admin-only visual: shows every pawn's parry box on this client for tuning.
-exec function XangModShowParryBoxes(optional bool bShow = true)
+exec function BangModVanillaShowParryBoxes(optional bool bShow = true)
 {
 	local AOCPawn P;
 
@@ -88,41 +88,41 @@ exec function XangModShowParryBoxes(optional bool bShow = true)
 	}
 }
 
-reliable client function ClientSyncParryBoxSettings(bool bEnableXangMod, bool bEnableSkeletal)
+reliable client function ClientSyncParryBoxSettings(bool bEnableBangModVanilla, bool bEnableSkeletal)
 {
-	bXangModParryBox = bEnableXangMod;
+	bBangModVanillaParryBox = bEnableBangModVanilla;
 	bSkeletalParry = bEnableSkeletal;
-	SetAllParryBoxClassDefaults(bEnableXangMod, bEnableSkeletal);
+	SetAllParryBoxClassDefaults(bEnableBangModVanilla, bEnableSkeletal);
 	ApplyParryBoxSettingsToAllPawns();
 }
 
 simulated function SetAllCollisionRadiusClassDefaults(float Radius)
 {
-	class'XangModAOCDuelPlayerController'.default.fXangModCollisionRadius = Radius;
-	class'XangModCDWDuelPlayerController'.default.fXangModCollisionRadius = Radius;
-	class'XangModCTFPlayerController'.default.fXangModCollisionRadius = Radius;
-	class'XangModFFAPlayerController'.default.fXangModCollisionRadius = Radius;
-	class'XangModKOTHPlayerController'.default.fXangModCollisionRadius = Radius;
-	class'XangModLTSPlayerController'.default.fXangModCollisionRadius = Radius;
-	class'XangModTDPlayerController'.default.fXangModCollisionRadius = Radius;
-	class'XangModTOPlayerController'.default.fXangModCollisionRadius = Radius;
-	class'XangModTUTPlayerController'.default.fXangModCollisionRadius = Radius;
+	class'BangModVanillaAOCDuelPlayerController'.default.fBangModVanillaCollisionRadius = Radius;
+	class'BangModVanillaCDWDuelPlayerController'.default.fBangModVanillaCollisionRadius = Radius;
+	class'BangModVanillaCTFPlayerController'.default.fBangModVanillaCollisionRadius = Radius;
+	class'BangModVanillaFFAPlayerController'.default.fBangModVanillaCollisionRadius = Radius;
+	class'BangModVanillaKOTHPlayerController'.default.fBangModVanillaCollisionRadius = Radius;
+	class'BangModVanillaLTSPlayerController'.default.fBangModVanillaCollisionRadius = Radius;
+	class'BangModVanillaTDPlayerController'.default.fBangModVanillaCollisionRadius = Radius;
+	class'BangModVanillaTOPlayerController'.default.fBangModVanillaCollisionRadius = Radius;
+	class'BangModVanillaTUTPlayerController'.default.fBangModVanillaCollisionRadius = Radius;
 }
 
 simulated function ApplyCollisionRadiusToCurrentPawn()
 {
-	local XangModAOCDuelPawn BMP;
+	local BangModVanillaAOCDuelPawn BMP;
 
-	BMP = XangModAOCDuelPawn(Pawn);
+	BMP = BangModVanillaAOCDuelPawn(Pawn);
 	if (BMP == none || BMP.OuterCylinderComp == none)
 		return;
 
-	BMP.OuterCylinderComp.SetCylinderSize(class'XangModAOCDuelPlayerController'.default.fXangModCollisionRadius, 65.0);
+	BMP.OuterCylinderComp.SetCylinderSize(class'BangModVanillaAOCDuelPlayerController'.default.fBangModVanillaCollisionRadius, 65.0);
 }
 
 reliable client function ClientSyncCollisionRadius(float Radius)
 {
-	fXangModCollisionRadius = Radius;
+	fBangModVanillaCollisionRadius = Radius;
 	SetAllCollisionRadiusClassDefaults(Radius);
 	ApplyCollisionRadiusToCurrentPawn();
 }

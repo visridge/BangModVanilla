@@ -1,5 +1,5 @@
-// XangMod - AdminMaps.uci
-// Included via XangModPlayerController.uci. Vars live in PC/Vars.uci; DefaultProperties in PC/Effects.uci (last).
+// BangModVanilla - AdminMaps.uci
+// Included via BangModVanillaPlayerController.uci. Vars live in PC/Vars.uci; DefaultProperties in PC/Effects.uci (last).
 exec function AdminGotoSF() {
 	if (!PlayerReplicationInfo.bAdmin) {
 		ClientDisplayConsoleMessage("You are not logged in as an administrator on this server.");

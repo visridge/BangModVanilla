@@ -1,26 +1,26 @@
-// XangMod - Core.uci
-// Included via XangModPawn.uci. Vars live in Pawn/Vars.uci; DefaultProperties in Pawn/Camera.uci (last).
+// BangModVanilla - Core.uci
+// Included via BangModVanillaPawn.uci. Vars live in Pawn/Vars.uci; DefaultProperties in Pawn/Camera.uci (last).
 // Override Tick to ensure panting starts at 20 stamina or below
 simulated event Tick(float DeltaTime)
 {
 	// local bool bCanUseBastardSwordSprintAttack;
 	// local bool bUsingBastardSword;
-	local XangModBotBrain Brain;
+	local BangModVanillaBotBrain Brain;
 
 	// Call parent first to do all normal tick logic
 	super.Tick(DeltaTime);
 
-	// XANGMOD: commit any held swings whose latency window elapsed without a parry.
+	// BangModVanilla: commit any held swings whose latency window elapsed without a parry.
 	if (Role == ROLE_Authority)
 		ProcessPendingHits();
 
-	// XANGMOD: any combat-AI pawn gets the bot brain, whatever controller class the map spawned it with.
-	if (Role == ROLE_Authority && Health > 0 && WorldInfo.TimeSeconds >= fXangModBrainCheckAt && AOCAICombatController(Controller) != none)
+	// BangModVanilla: any combat-AI pawn gets the bot brain, whatever controller class the map spawned it with.
+	if (Role == ROLE_Authority && Health > 0 && WorldInfo.TimeSeconds >= fBangModVanillaBrainCheckAt && AOCAICombatController(Controller) != none)
 	{
-		fXangModBrainCheckAt = WorldInfo.TimeSeconds + 1.0f;
-		if (!XangModHasBrain())
+		fBangModVanillaBrainCheckAt = WorldInfo.TimeSeconds + 1.0f;
+		if (!BangModVanillaHasBrain())
 		{
-			Brain = Spawn(class'XangModBotBrain', self);
+			Brain = Spawn(class'BangModVanillaBotBrain', self);
 			if (Brain != none)
 				Brain.Init(self);
 		}
@@ -31,7 +31,7 @@ simulated event Tick(float DeltaTime)
 		bKanaboExtraJumpUsed = false;
 	}
 
-	// XANGMOD: Grand Lance — force sprint+forward during stab release.
+	// BangModVanilla: Grand Lance — force sprint+forward during stab release.
 	if (bForceSprintForward)
 	{
 		bIsCrouching = false;
@@ -50,11 +50,11 @@ simulated event Tick(float DeltaTime)
 
 
 // Owned-actor check, so the parent and gamemode copies of Tick can't spawn two brains.
-function bool XangModHasBrain()
+function bool BangModVanillaHasBrain()
 {
-	local XangModBotBrain B;
+	local BangModVanillaBotBrain B;
 
-	foreach ChildActors(class'XangModBotBrain', B)
+	foreach ChildActors(class'BangModVanillaBotBrain', B)
 		return true;
 	return false;
 }

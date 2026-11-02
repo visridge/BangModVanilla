@@ -1,0 +1,11 @@
+// BangModVanilla - BangModVanillaPawn.uci (facade)
+// Splits into Pawn/. Order matters: Vars.uci first (vars must precede functions), the file carrying DefaultProperties last.
+
+`include(BangModVanilla/Include/Pawn/Vars.uci)
+`include(BangModVanilla/Include/Pawn/Core.uci)
+`include(BangModVanilla/Include/Pawn/Customization.uci)
+`include(BangModVanilla/Include/Pawn/Combat.uci)
+`include(BangModVanilla/Include/Pawn/Movement.uci)
+`include(BangModVanilla/Include/Pawn/Animation.uci)
+`include(BangModVanilla/Include/Pawn/Netcode.uci)
+`include(BangModVanilla/Include/Pawn/Camera.uci)

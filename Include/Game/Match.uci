@@ -1,5 +1,5 @@
-// XangMod - Match.uci
-// Included via XangModGame.uci. Vars live in Game/Vars.uci; DefaultProperties in Game/Server.uci (last).
+// BangModVanilla - Match.uci
+// Included via BangModVanillaGame.uci. Vars live in Game/Vars.uci; DefaultProperties in Game/Server.uci (last).
 static event class<GameInfo> SetGameType(string MapName, string Options, string Portal)
 {
     local string ThisMapPrefix;
@@ -116,27 +116,27 @@ function bool ShouldCountDown()
 
         if (bReadyGateOpen)
         {
-            fXangModTournamentHoldSince = 0;
+            fBangModVanillaTournamentHoldSince = 0;
             return true;
         }
 
-        if (fXangModTournamentHoldSince == 0)
+        if (fBangModVanillaTournamentHoldSince == 0)
         {
-            fXangModTournamentHoldSince = WorldInfo.TimeSeconds;
+            fBangModVanillaTournamentHoldSince = WorldInfo.TimeSeconds;
         }
-        else if (fXangModTournamentHoldLimit > 0
-                 && WorldInfo.TimeSeconds - fXangModTournamentHoldSince > fXangModTournamentHoldLimit)
+        else if (fBangModVanillaTournamentHoldLimit > 0
+                 && WorldInfo.TimeSeconds - fBangModVanillaTournamentHoldSince > fBangModVanillaTournamentHoldLimit)
         {
             // Only StartRound clears bTournamentMode, and it cannot run while this
             // returns false -- so give up rather than hold the server hostage.
-            LogAlwaysInternal("[XangMod] Tournament ready gate held the pre-round for"
-                @ int(fXangModTournamentHoldLimit) @ "seconds. Dropping tournament mode.");
+            LogAlwaysInternal("[BangModVanilla] Tournament ready gate held the pre-round for"
+                @ int(fBangModVanillaTournamentHoldLimit) @ "seconds. Dropping tournament mode.");
             S_BroadcastServerMessage("Tournament mode could not start the round. Starting normally.");
 
             bTournamentMode = false;
             if (AOCGRI(GameReplicationInfo) != none)
                 AOCGRI(GameReplicationInfo).bTournamentModeWaiting = false;
-            fXangModTournamentHoldSince = 0;
+            fBangModVanillaTournamentHoldSince = 0;
 
             return (bEachTeamHasAtleastOnePlayer || !bWaitForTeams);
         }
@@ -259,13 +259,13 @@ function StartMatch()
 
     //BeginStatsReporting();
 
-    // XANGMOD: make catapults permanently destructible (see DisableCatapultRespawns). One
+    // BangModVanilla: make catapults permanently destructible (see DisableCatapultRespawns). One
     // immediate pass covers catapults already on the map, and a low-frequency looping sweep
     // catches any destroyed or Kismet-spawned later in the round.
     DisableCatapultRespawns();
     SetTimer(3.0, true, 'DisableCatapultRespawns');
 
-    // XANGMOD: disable siege weapons and non-objective gates on Slumforest only.
+    // BangModVanilla: disable siege weapons and non-objective gates on Slumforest only.
     // Objective-tied AOCInterpActor instances (e.g. Darkforest doors, peasant gates) are
     // excluded via IsPartOfObjective(). Repeated on a timer to catch Kismet-spawned actors.
     // DisableSiegeObjects();
@@ -273,7 +273,7 @@ function StartMatch()
 }
 
 /**
- * Round start. Every XangMod game class includes this file, so this override replaces the
+ * Round start. Every BangModVanilla game class includes this file, so this override replaces the
  * inherited StartRound everywhere. It calls super first, so each mode's own StartRound
  * still runs unchanged (AOCLTS.StartRound notably does NOT call its own parent), then
  * emits 65. Because StartRound only ever runs out of the pre-round, warmup can never
@@ -281,58 +281,58 @@ function StartMatch()
  */
 function StartRound()
 {
-    local XangModRCon RCon;
+    local BangModVanillaRCon RCon;
     local int AgathaScore, MasonScore, Goal;
 
     super.StartRound();
 
-    if (!XangModRoundReportingEnabled())
+    if (!BangModVanillaRoundReportingEnabled())
         return;
 
-    XangModRoundNumber++;
+    BangModVanillaRoundNumber++;
     // The stat counters run from map load. Clear them as the first real round begins so
     // pre-round swings, parries and feints are not reported as round 1.
-    if (XangModRoundNumber == 1)
+    if (BangModVanillaRoundNumber == 1)
     {
-        XangModResetRoundStats();
-        XangModObjCompleted = 0;
-        XangModObjSkipped = 0;
-        XangModObjSkipMark = 0;
+        BangModVanillaResetRoundStats();
+        BangModVanillaObjCompleted = 0;
+        BangModVanillaObjSkipped = 0;
+        BangModVanillaObjSkipMark = 0;
     }
-    bXangModMatchEnded = false;
-    bXangModMatchEndEmitted = false;
+    bBangModVanillaMatchEnded = false;
+    bBangModVanillaMatchEndEmitted = false;
 
-    RCon = XangModRCon(RemoteConsole);
+    RCon = BangModVanillaRCon(RemoteConsole);
     if (RCon == none)
         return;
 
-    XangModRoundScores(AgathaScore, MasonScore, Goal);
-    RCon.SendRoundStart(XangModRoundMapName(), XangModRoundNumber, AgathaScore, MasonScore, Goal);
+    BangModVanillaRoundScores(AgathaScore, MasonScore, Goal);
+    RCon.SendRoundStart(BangModVanillaRoundMapName(), BangModVanillaRoundNumber, AgathaScore, MasonScore, Goal);
 }
 
 /**
  * Round end. For LTS this fires once per scored round; for TD/TO it fires when the match
  * ends. If EndGame already ran (LTS reaching GoalScore, or any TD/TO end), it emitted 66
- * itself with matchEnding=1, so this stays quiet. The bXangModRoundEnding flag stops
+ * itself with matchEnding=1, so this stays quiet. The bBangModVanillaRoundEnding flag stops
  * AOCLTS's internal draw recursion (AOCLTS.AOCEndRound calls itself) from double-emitting.
  */
 function AOCEndRound()
 {
     local bool bEmit;
 
-    bEmit = !bXangModRoundEnding;
-    bXangModRoundEnding = true;
+    bEmit = !bBangModVanillaRoundEnding;
+    bBangModVanillaRoundEnding = true;
 
     super.AOCEndRound();
 
-    bXangModRoundEnding = false;
+    bBangModVanillaRoundEnding = false;
 
-    if (!XangModRoundReportingEnabled() || !bEmit)
+    if (!BangModVanillaRoundReportingEnabled() || !bEmit)
         return;
-    if (bXangModMatchEnded)
+    if (bBangModVanillaMatchEnded)
         return;
 
-    XangModSendRoundEnd(XangModRoundWinnerTeamIndex(), 0);
+    BangModVanillaSendRoundEnd(BangModVanillaRoundWinnerTeamIndex(), 0);
 }
 
 /**
@@ -342,19 +342,19 @@ function AOCEndRound()
  */
 function EndGame(PlayerReplicationInfo Winner, string Reason)
 {
-    bXangModMatchEnded = true;
+    bBangModVanillaMatchEnded = true;
     super.EndGame(Winner, Reason);
 
     if (Ranked != none)
         Ranked.MatchEnded();
 
-    if (!XangModRoundReportingEnabled())
+    if (!BangModVanillaRoundReportingEnabled())
         return;
-    if (bXangModMatchEndEmitted)
+    if (bBangModVanillaMatchEndEmitted)
         return;
-    bXangModMatchEndEmitted = true;
+    bBangModVanillaMatchEndEmitted = true;
 
-    XangModSendRoundEnd(XangModRoundWinnerTeamIndex(), 1);
+    BangModVanillaSendRoundEnd(BangModVanillaRoundWinnerTeamIndex(), 1);
 }
 
 // Disabled 2026-09-14: superseded by the RCON round-start/end event stream. Kept as
@@ -511,11 +511,11 @@ function PostBeginPlay()
 {
     super.PostBeginPlay();
 
-    if (!IsA('XangModLTS') && !IsA('XangModTO'))
+    if (!IsA('BangModVanillaLTS') && !IsA('BangModVanillaTO'))
         return;
 
-    Ranked = Spawn(class'XangModRanked');
-    Ranked.InitRanked(false, IsA('XangModTO'));
+    Ranked = Spawn(class'BangModVanillaRanked');
+    Ranked.InitRanked(false, IsA('BangModVanillaTO'));
     Ranked.Ping();
 }
 
@@ -528,7 +528,7 @@ function GenericPlayerInitialization(Controller C)
 
     // Delayed so the client HUD exists; earlier chat lines are dropped.
     if (AOCPlayerController(C) != none)
-        C.SetTimer(8.0, false, 'XangModShowRankedHint');
+        C.SetTimer(8.0, false, 'BangModVanillaShowRankedHint');
 
     if (Ranked != none && Ranked.ShowEloTag())
     {
@@ -537,7 +537,7 @@ function GenericPlayerInitialization(Controller C)
     else if (C.PlayerReplicationInfo != none)
     {
         // Names carry over between maps; drop the tag where Elo is not shown.
-        StrippedName = class'XangModRanked'.static.StripEloTag(C.PlayerReplicationInfo.PlayerName);
+        StrippedName = class'BangModVanillaRanked'.static.StripEloTag(C.PlayerReplicationInfo.PlayerName);
         if (StrippedName != C.PlayerReplicationInfo.PlayerName)
             ChangeName(C, StrippedName, false);
     }

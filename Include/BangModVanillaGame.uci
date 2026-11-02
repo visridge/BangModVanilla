@@ -1,0 +1,9 @@
+// BangModVanilla - BangModVanillaGame.uci (facade)
+// Splits into Game/. Order matters: Vars.uci first (vars must precede functions), the file carrying DefaultProperties last.
+
+`include(BangModVanilla/Include/Game/Vars.uci)
+`include(BangModVanilla/Include/BangModVanillaCompForestSpawnControl.uci)
+`include(BangModVanilla/Include/Game/Match.uci)
+`include(BangModVanilla/Include/Game/RoundReporting.uci)
+`include(BangModVanilla/Include/Game/SiegeObjects.uci)
+`include(BangModVanilla/Include/Game/Server.uci)

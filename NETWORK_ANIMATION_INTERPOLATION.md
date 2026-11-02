@@ -1,6 +1,6 @@
 # Network Animation Interpolation
 
-This document describes a future, visual-only network animation interpolation pass for XangMod. It is an implementation and test plan, not a claim that the feature is already present.
+This document describes a future, visual-only network animation interpolation pass for BangModVanilla. It is an implementation and test plan, not a claim that the feature is already present.
 
 ## Goal
 
@@ -27,12 +27,12 @@ The important control points are:
 - `AOC/classes/AOCAnimNodeSeqWep.uc`
   - Native `TickAnim` advances the current skeletal animation locally.
   - `WeaponAnimationRates` changes the animation rate selected for a weapon.
-- `XangMod/Include/Pawn/Camera.uci`
-  - XangMod pawns request `NetUpdateFrequency=120`.
-- `XangMod/Include/Pawn/Netcode.uci`
+- `BangModVanilla/Include/Pawn/Camera.uci`
+  - BangModVanilla pawns request `NetUpdateFrequency=120`.
+- `BangModVanilla/Include/Pawn/Netcode.uci`
   - `GetNetPriority()` requests 120 Hz pawn updates and high network priority.
   - Clock offset smoothing and ping reconstruction are used for combat timing only.
-- `XangMod/Include/PC/Core.uci`
+- `BangModVanilla/Include/PC/Core.uci`
   - `ReplicateMove()` sends autonomous movement at `0.00833` seconds when possible.
 
 The current animation path is event-driven. A client receives an animation state and immediately starts the corresponding local animation. Blend times smooth the pose transition, while `CalcAnimRate()` changes duration. Neither one interpolates between network animation samples.
@@ -55,12 +55,12 @@ The client should interpolate presentation only. It should not move the authorit
 
 ### 1. Add a timestamped visual snapshot
 
-Do not overload the existing `ReplicatedAnimation` behavior initially. Add a separate XangMod snapshot so the vanilla path remains available as a rollback path.
+Do not overload the existing `ReplicatedAnimation` behavior initially. Add a separate BangModVanilla snapshot so the vanilla path remains available as a rollback path.
 
 The snapshot should contain the minimum data needed to reconstruct a visual animation:
 
 ```unrealscript
-struct XangModAnimationSnapshot
+struct BangModVanillaAnimationSnapshot
 {
     var name AnimationName;
     var name ComboAnimation;
@@ -87,7 +87,7 @@ The snapshot needs to be:
 - Marked with a sequence value so two identical attacks still produce separate updates.
 - Kept separate from local-owner playback.
 
-Place new pawn variables in `Include/Pawn/Vars.uci`. If a new replicated property is required, add the replication declaration in the owning XangMod pawn class, not only in an include file that is compiled in multiple contexts.
+Place new pawn variables in `Include/Pawn/Vars.uci`. If a new replicated property is required, add the replication declaration in the owning BangModVanilla pawn class, not only in an include file that is compiled in multiple contexts.
 
 ### 2. Establish a server/client time relationship
 
@@ -242,7 +242,7 @@ Test on a dedicated server first, then on a listen server. Use two human clients
 | Parry | Attack and parry under latency | Existing server rollback result is unchanged |
 | Death | Kill a pawn during correction | Correction is cancelled and death animation wins |
 | Listen server | Host plus remote client | No double playback or owner mesh regression |
-| NPC | XangMod NPC at its lower update rate | No assumption that all pawns receive 120 Hz updates |
+| NPC | BangModVanilla NPC at its lower update rate | No assumption that all pawns receive 120 Hz updates |
 
 Record video or timestamps for the same attack at each latency level. Compare the remote animation phase against the server event time rather than judging only whether the motion looks smooth.
 
@@ -260,10 +260,10 @@ The feature is ready for broader use only when:
 
 ## Build and Deployment Checks
 
-Follow the build notes in `XANGMOD.md`:
+Follow the build notes in `BangModVanilla.md`:
 
 1. Compile the full `.uc` class. Do not treat a standalone `.uci` lint result as authoritative.
-2. Confirm the generated `XangMod.u` contains the new function or field name.
+2. Confirm the generated `BangModVanilla.u` contains the new function or field name.
 3. Confirm the cooked package being loaded is newer than the source change.
 4. Restore any `.upk` content removed by a cook before testing animations.
 5. Test the dedicated-server package and client package together.
@@ -274,8 +274,8 @@ The first implementation should remain easy to disable while animation timing an
 
 - [AOC/classes/AOCPawn.uc](AOC/classes/AOCPawn.uc)
 - [AOC/classes/AOCAnimNodeSeqWep.uc](AOC/classes/AOCAnimNodeSeqWep.uc)
-- [XangMod/Include/Pawn/Vars.uci](XangMod/Include/Pawn/Vars.uci)
-- [XangMod/Include/Pawn/Netcode.uci](XangMod/Include/Pawn/Netcode.uci)
-- [XangMod/Include/Pawn/Camera.uci](XangMod/Include/Pawn/Camera.uci)
-- [XangMod/Include/PC/Core.uci](XangMod/Include/PC/Core.uci)
-- [XangMod/Include/PC/Effects.uci](XangMod/Include/PC/Effects.uci)
+- [BangModVanilla/Include/Pawn/Vars.uci](BangModVanilla/Include/Pawn/Vars.uci)
+- [BangModVanilla/Include/Pawn/Netcode.uci](BangModVanilla/Include/Pawn/Netcode.uci)
+- [BangModVanilla/Include/Pawn/Camera.uci](BangModVanilla/Include/Pawn/Camera.uci)
+- [BangModVanilla/Include/PC/Core.uci](BangModVanilla/Include/PC/Core.uci)
+- [BangModVanilla/Include/PC/Effects.uci](BangModVanilla/Include/PC/Effects.uci)

@@ -1,5 +1,5 @@
-// XangMod - Netcode.uci
-// Included via XangModPawn.uci. Vars live in Pawn/Vars.uci; DefaultProperties in Pawn/Camera.uci (last).
+// BangModVanilla - Netcode.uci
+// Included via BangModVanillaPawn.uci. Vars live in Pawn/Vars.uci; DefaultProperties in Pawn/Camera.uci (last).
 // One-way latency in seconds. ExactPing is round-trip (seconds), so halve it. Capped so a
 // spoofed/garbage ping can't push reconstructed action times arbitrarily far into the past.
 function float GetOneWayPingSeconds()
@@ -33,10 +33,10 @@ function UpdateClockOffset(float fClientStamp)
 	}
 }
 
-// XANGMOD: Seed this pawn's client-clock offset from the controller's persisted value (carried
+// BangModVanilla: Seed this pawn's client-clock offset from the controller's persisted value (carried
 // from the player's previous pawn before it died). Lets the hit-trade timestamp system start
 // warm on respawn instead of cold-starting into pure ping reconstruction. Called from
-// XangModPlayerController.Possess. Server-only.
+// BangModVanillaPlayerController.Possess. Server-only.
 function SeedClockOffset(float fOffset)
 {
 	fClientClockOffset = fOffset;
@@ -85,7 +85,7 @@ function PruneRecentIncomingHits()
 
 // Remember a hit we just took (on the victim pawn) so a counter-swing still in flight can be
 // recognised as a staggered trade and dropped.
-function RecordIncomingHit(XangModPawn FromPawn, float fActionServerTime)
+function RecordIncomingHit(BangModVanillaPawn FromPawn, float fActionServerTime)
 {
 	local RecentIncomingHit NewEntry;
 
@@ -104,13 +104,13 @@ function RecordIncomingHit(XangModPawn FromPawn, float fActionServerTime)
 // would otherwise line up as a staggered trade.
 function bool IsRiposteAttack()
 {
-	return XangModMeleeWeapon(Weapon) != none && XangModMeleeWeapon(Weapon).bParryHitCounter;
+	return BangModVanillaMeleeWeapon(Weapon) != none && BangModVanillaMeleeWeapon(Weapon).bParryHitCounter;
 }
 
 // True when OUR swing should be dropped: this opponent hit us (or has a swing held on us that
 // will hit) clearly earlier than our swing landed — beyond the trade window. Checking held
 // swings too means the rollback hold can never let a staggered hit slip through as a trade.
-function bool ShouldCancelTradeSwing(XangModPawn Opponent, float fSwingActionTime)
+function bool ShouldCancelTradeSwing(BangModVanillaPawn Opponent, float fSwingActionTime)
 {
 	local int i;
 
@@ -167,7 +167,7 @@ reliable server function ServerStampParryTime(float fClientParryTime)
 	fLastParryStampServerTime = WorldInfo.TimeSeconds;
 }
 
-// XANGMOD: How long to hold an incoming swing on THIS (defender) pawn so an in-flight parry
+// BangModVanilla: How long to hold an incoming swing on THIS (defender) pawn so an in-flight parry
 // can still reach the server and suppress it. Equals the defender's one-way latency, capped.
 // Returns 0 on LAN/bots (no network crossing to compensate) -> swings resolve instantly.
 function float GetParryHoldSeconds()
@@ -186,7 +186,7 @@ function float GetParryHoldSeconds()
 	return fHold;
 }
 
-// XANGMOD: Commit held swings whose hold window elapsed without a parry. Runs on the defender
+// BangModVanilla: Commit held swings whose hold window elapsed without a parry. Runs on the defender
 // (self) from Tick. Each commits exactly once through the normal hit path.
 function ProcessPendingHits()
 {
@@ -213,22 +213,22 @@ function ProcessPendingHits()
 	}
 }
 
-// XANGMOD: Delayed Firebug ignition — lets the blunt impact sound finish before the fire
+// BangModVanilla: Delayed Firebug ignition — lets the blunt impact sound finish before the fire
 // scream plays, so both audio cues are audible instead of the scream drowning out the impact.
 function DelayedFirebugIgnite()
 {
 	if (StoredFirebugHitActor != none && StoredFirebugHitActor.IsAliveAndWell()
 		&& !StoredFirebugHitActor.bIsBurning)
 	{
-		StoredFirebugHitActor.SetPawnOnFire(none, Controller, self, class'XangModDmgType_TorchBurn');
+		StoredFirebugHitActor.SetPawnOnFire(none, Controller, self, class'BangModVanillaDmgType_TorchBurn');
 	}
 	StoredFirebugHitActor = none;
 }
 
-// XANGMOD: A parry landed while swings were still held on us — resolve every one as a parry
+// BangModVanilla: A parry landed while swings were still held on us — resolve every one as a parry
 // BEFORE any hit feedback plays (decide-once). DetectSuccessfulParry still rejects illegal
 // parries (e.g. back hits), which then fall through to a normal hit. Runs on the defender (self)
-// from XangModMeleeWeapon.Parry.BeginState, after super sets bIsParrying/bIsActiveShielding.
+// from BangModVanillaMeleeWeapon.Parry.BeginState, after super sets bIsParrying/bIsActiveShielding.
 // fParryActionServerTime is when the parry went active (server timeline); a held swing is only
 // resolved as a parry if the parry wasn't clearly later than the swing (timestamp gate). Swings
 // that the parry was too late for stay held and commit as normal hits when their hold expires.

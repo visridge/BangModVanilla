@@ -1,21 +1,21 @@
-// XangMod - Core.uci
-// Included via XangModPlayerController.uci. Vars live in PC/Vars.uci; DefaultProperties in PC/Effects.uci (last).
-// Ensure XangMod uses its customization class everywhere
+// BangModVanilla - Core.uci
+// Included via BangModVanillaPlayerController.uci. Vars live in PC/Vars.uci; DefaultProperties in PC/Effects.uci (last).
+// Ensure BangModVanilla uses its customization class everywhere
 simulated event PostBeginPlay()
 {
 	super.PostBeginPlay();
-	if (CustomizationClass != class'XangModCustomization')
+	if (CustomizationClass != class'BangModVanillaCustomization')
 	{
-		CustomizationClass = class'XangModCustomization';
+		CustomizationClass = class'BangModVanillaCustomization';
 	}
 
-	// XANGMOD: follow players in first person by default; Space toggles back to
+	// BangModVanilla: follow players in first person by default; Space toggles back to
 	// the vanilla orbit follow. Set here rather than in state Spectating.BeginState
 	// so the choice sticks for the whole session instead of resetting every time
 	// the player re-enters spectate.
-	bXangModFPSpectate = true;
+	bBangModVanillaFPSpectate = true;
 
-	XangModRepairPersistedConfig();
+	BangModVanillaRepairPersistedConfig();
 }
 
 /*
@@ -26,7 +26,7 @@ simulated function bool CanBastardSwordSprintAttack(AOCPawn AOCP)
 		return false;
 	}
 
-	return AOCP.Weapon.Class == class'XangModWeapon_BastardSword'
+	return AOCP.Weapon.Class == class'BangModVanillaWeapon_BastardSword'
 		&& AOCP.bIsSprintMaxSpeed;
 }
 */
@@ -140,7 +140,7 @@ function ProcessViewRotation( float DeltaTime, out Rotator out_ViewRotation, Rot
 	}
 	else if ( AOCPawn(Pawn) != None )
 	{	
-		// XANGMOD turncap desync fix. StateVariables is a *replicated* struct, so on a dedicated
+		// BangModVanilla turncap desync fix. StateVariables is a *replicated* struct, so on a dedicated
 		// server the server's snapshot of bIsAttacking periodically clobbers the owning client's
 		// locally-predicted value. During rapid combos that bool can read false for a frame or two
 		// between chained attacks; on those frames the gate below skipped the yaw clamp entirely
@@ -184,7 +184,7 @@ function ProcessViewRotation( float DeltaTime, out Rotator out_ViewRotation, Rot
 				}
 			}
 			
-			// XANGMOD: Loosen turn cap during parry animation - use Holy Water Sprinkler esque speeds
+			// BangModVanilla: Loosen turn cap during parry animation - use Holy Water Sprinkler esque speeds
 			if (AOCPawn(Pawn).StateVariables.bIsParrying)
 			{
 				MaxTurnSpeed = 75000.0;
@@ -272,11 +272,11 @@ event Possess(Pawn inPawn, bool bVehicleTransition)
 {
 	super.Possess(inPawn, bVehicleTransition);
 
-	// XANGMOD: Re-seed the client-clock offset carried from this player's previous pawn so the
+	// BangModVanilla: Re-seed the client-clock offset carried from this player's previous pawn so the
 	// hit-trade timestamp system starts warm instead of cold (pure ping reconstruction) for the
 	// first hit or two after respawn. Offset is captured in PawnDied below. Server-only.
-	if (Role == ROLE_Authority && bPersistedClockOffsetInit && XangModPawn(inPawn) != none)
-		XangModPawn(inPawn).SeedClockOffset(fPersistedClientClockOffset);
+	if (Role == ROLE_Authority && bPersistedClockOffsetInit && BangModVanillaPawn(inPawn) != none)
+		BangModVanillaPawn(inPawn).SeedClockOffset(fPersistedClientClockOffset);
 	
 	// Force ragdolls disabled on every spawn (catches players with read-only configs)
 	ConsoleCommand("SetRagdollLimit 0");
@@ -284,9 +284,9 @@ event Possess(Pawn inPawn, bool bVehicleTransition)
 	// Parry boxes are traced on the attacker's client, so late joiners and respawns need the server's settings.
 	if (Role == ROLE_Authority)
 	{
-		ClientSyncParryBoxSettings(class'XangModAOCDuelPlayerController'.default.bXangModParryBox,
-			class'XangModAOCDuelPlayerController'.default.bSkeletalParry);
-		// ClientSyncCollisionRadius(class'XangModAOCDuelPlayerController'.default.fXangModCollisionRadius);
+		ClientSyncParryBoxSettings(class'BangModVanillaAOCDuelPlayerController'.default.bBangModVanillaParryBox,
+			class'BangModVanillaAOCDuelPlayerController'.default.bSkeletalParry);
+		// ClientSyncCollisionRadius(class'BangModVanillaAOCDuelPlayerController'.default.fBangModVanillaCollisionRadius);
 	}
 	
 	// Show optimization tip once when player first spawns
@@ -297,13 +297,13 @@ event Possess(Pawn inPawn, bool bVehicleTransition)
 	}
 }
 
-// XANGMOD: Capture the dying pawn's accumulated client-clock offset so the next pawn can start
+// BangModVanilla: Capture the dying pawn's accumulated client-clock offset so the next pawn can start
 // warm (re-seeded in Possess). Runs before super so the pawn is still valid. Server-only.
 function PawnDied(Pawn P)
 {
-	if (Role == ROLE_Authority && XangModPawn(P) != none && XangModPawn(P).bClientClockOffsetInit)
+	if (Role == ROLE_Authority && BangModVanillaPawn(P) != none && BangModVanillaPawn(P).bClientClockOffsetInit)
 	{
-		fPersistedClientClockOffset = XangModPawn(P).fClientClockOffset;
+		fPersistedClientClockOffset = BangModVanillaPawn(P).fClientClockOffset;
 		bPersistedClockOffsetInit = true;
 	}
 
@@ -324,17 +324,17 @@ simulated event tick(float DeltaTime)
 	super.tick(DeltaTime);
 
 	// Runs in every state, so it covers both playing and spectating.
-	XangModEnforceLifeBars();
+	BangModVanillaEnforceLifeBars();
 
 	// Belt and braces on the ClientCapBandwidth override. That hook catches the cap the
 	// server applies at PostLogin, but it is a single ordering-dependent call -- if it
 	// ever fires before Player is valid, or something else lowers the rate later, the
 	// client is left throttled with no second chance. Cheap to just re-check: the
 	// function early-outs on a comparison, and this only runs twice a second.
-	if (WorldInfo.TimeSeconds >= fXangModNextNetSpeedCheck)
+	if (WorldInfo.TimeSeconds >= fBangModVanillaNextNetSpeedCheck)
 	{
-		fXangModNextNetSpeedCheck = WorldInfo.TimeSeconds + 0.5f;
-		XangModRestoreNetSpeed();
+		fBangModVanillaNextNetSpeedCheck = WorldInfo.TimeSeconds + 0.5f;
+		BangModVanillaRestoreNetSpeed();
 	}
 	
 	if (bShowGroundSpeed)
@@ -477,7 +477,7 @@ function ReplicateMove(float DeltaTime, vector NewAccel, eDoubleClickDir DoubleC
 
 	if ( PendingMove == None )
 	{
-		// XangMod: Fixed 120Hz update rate for improved netcode
+		// BangModVanilla: Fixed 120Hz update rate for improved netcode
 		// Original code had dynamic rates: 90Hz (<=10 players) or 45Hz+ (>10 players) on listen servers, 20Hz on dedicated
 		// Setting to 0.00833 (~120Hz) matches the server's max tickrate for optimal smoothness
 		NetMoveDelta = 0.00833;

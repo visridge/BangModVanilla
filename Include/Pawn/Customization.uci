@@ -1,5 +1,5 @@
-// XangMod - Customization.uci
-// Included via XangModPawn.uci. Vars live in Pawn/Vars.uci; DefaultProperties in Pawn/Camera.uci (last).
+// BangModVanilla - Customization.uci
+// Included via BangModVanillaPawn.uci. Vars live in Pawn/Vars.uci; DefaultProperties in Pawn/Camera.uci (last).
 /** Apply shield color picker values to the helmet material's PatternColor params */
 simulated function ApplyShieldColorsToHelmet()
 {
@@ -52,13 +52,13 @@ simulated function WeaponAttachmentChanged()
 
 	// Re-apply weapon-keyed stat overrides (footman family) after every equip so
 	// the movement/stat fields track weapon swaps mid-life.
-	ApplyXangModFootmanStats();
+	ApplyBangModVanillaFootmanStats();
 
 	// Force PoleAxeBack to use its own mesh on ALL clients.
 	// WeaponEquipping::BeginState runs only on authority/local clients;
 	// remote clients get the attachment via replication and need this hook
 	// to apply the correct skeletal mesh.
-	if (CurrentWeaponAttachment.Class == class'XangModWeaponAttachment_PoleAxeBack')
+	if (CurrentWeaponAttachment.Class == class'BangModVanillaWeaponAttachment_PoleAxeBack')
 	{
 		CurrentWeaponAttachment.Mesh.SetSkeletalMesh(
 			SkeletalMesh'SlumpWep_PaxeBack.SlumpWep_PaxeBack');
@@ -67,11 +67,11 @@ simulated function WeaponAttachmentChanged()
 				SkeletalMesh'SlumpWep_PaxeBack.SlumpWep_PaxeBack');
 	}
 
-	// XANGMOD: Fix heater shield orientation for javelin — javelin animations
+	// BangModVanilla: Fix heater shield orientation for javelin — javelin animations
 	// hold the arm differently, causing the heater to face skyward like a saucer.
 	// Rotate it 90° around Y (yaw) so the shield face points outward instead of upward.
 	// if (Weapon != none && StateVariables.bShieldEquipped
-	// 	&& (XangModWeapon_JavelinMelee(Weapon) != none || XangModWeapon_HeavyJavelinMelee(Weapon) != none))
+	// 	&& (BangModVanillaWeapon_JavelinMelee(Weapon) != none || BangModVanillaWeapon_HeavyJavelinMelee(Weapon) != none))
 	// {
 	// 	ShieldMesh.SetRotation(rot(16384, 0, 0));  // 90° yaw — rotates shield face outward
 	// 	if (OverlayShieldMesh != none)
@@ -79,42 +79,42 @@ simulated function WeaponAttachmentChanged()
 	// }
 }
 
-// Override to reset parry box to AOC defaults when XangMod parry box is disabled
+// Override to reset parry box to AOC defaults when BangModVanilla parry box is disabled
 simulated function AOCSetCharacterClassFromInfo(AOCFamilyInfo Info)
 {
 	super.AOCSetCharacterClassFromInfo(Info);
 
 	// GoFast: HandleDebuffs reads PawnFamily.MaxSprintSpeedTime server-side only.
 	if (Role == ROLE_Authority)
-		class'XangModAdminActions'.static.ApplyGoFast(PawnFamily);
+		class'BangModVanillaAdminActions'.static.ApplyGoFast(PawnFamily);
 
 	// NOTE: Do NOT guard on Controller != none here. This function fires during pawn setup,
 	// before the controller is associated, so that check would always fail and the reset
 	// would never run on the server.
-	if (!class'XangModAOCDuelPlayerController'.default.bXangModParryBox)
+	if (!class'BangModVanillaAOCDuelPlayerController'.default.bBangModVanillaParryBox)
 	{
 		// Revert to vanilla AOC parry box dimensions
 		ParryComponent.SetScale3D(vect(0.1, 0.17, 0.35));
 		ParryComponent.SetTranslation(vect(30, 0, -30));
 	}
-	else if (class'XangModAOCDuelPlayerController'.default.bSkeletalParry)
+	else if (class'BangModVanillaAOCDuelPlayerController'.default.bSkeletalParry)
 	{
 		// Skeletal parry: full-body coverage
 		ParryComponent.SetScale3D(vect(0.32, 0.32, 0.45));
 		ParryComponent.SetTranslation(vect(0, 0, -45));
 	}
-	// else: XangMod parry enabled, non-skeletal — super already applied FamilyInfo values
+	// else: BangModVanilla parry enabled, non-skeletal — super already applied FamilyInfo values
 	ParryComponent.SetTraceBlocking(false, false);
 
 	// Apply admin-controlled collision bubble radius (OuterCylinder)
 	if (OuterCylinderComp != none)
 	{
-		OuterCylinderComp.SetCylinderSize(class'XangModAOCDuelPlayerController'.default.fXangModCollisionRadius, 65.0);
+		OuterCylinderComp.SetCylinderSize(class'BangModVanillaAOCDuelPlayerController'.default.fBangModVanillaCollisionRadius, 65.0);
 	}
 
 	// Weapon-keyed stat override: the footman family re-applies movement/stat fields
 	// on top of the real Archer family when a footman primary is equipped.
-	ApplyXangModFootmanStats();
+	ApplyBangModVanillaFootmanStats();
 }
 
 //netupdate
@@ -130,7 +130,7 @@ simulated function AOCSetCharacterClassFromInfo(AOCFamilyInfo Info)
 // }
 
 /** Object name from a "Package.Object" or "Package.Group.Object" path. */
-simulated function string XangModObjectName(string Path)
+simulated function string BangModVanillaObjectName(string Path)
 {
 	local int i;
 
@@ -149,18 +149,18 @@ simulated function string XangModObjectName(string Path)
  * class ships with, so these are the arms Chivalry itself uses for that character.
  *
  * Matched on the OBJECT NAME only, deliberately ignoring the package. The custom
- * character package has been renamed once already (SlumpCharacters -> XangmodCharacters)
+ * character package has been renamed once already (SlumpCharacters -> BangModVanillaCharacters)
  * and the classes are currently split across both spellings, so keying on the full
  * path would silently stop matching the moment either name moves again.
  */
-simulated function SkeletalMesh XangModStock1PMesh(class<AOCCharacterInfo> Info)
+simulated function SkeletalMesh BangModVanillaStock1PMesh(class<AOCCharacterInfo> Info)
 {
 	local string Want, Path;
 
 	if (Info == none)
 		return none;
 
-	Want = XangModObjectName(Info.default.OwnerMeshPath);
+	Want = BangModVanillaObjectName(Info.default.OwnerMeshPath);
 
 	// Knights
 	if (Want ~= "AgathaKnight1p")
@@ -218,16 +218,16 @@ simulated function SetCharacterAppearance(AssetStore_AOCPawn_Character AssetStor
 		&& AssetStore.OwnerMesh == none
 		&& AssetStore.OwnerMeshPath ~= AssetStore.CharacterInfo.default.OwnerMeshPath)
 	{
-		Stock = XangModStock1PMesh(AssetStore.CharacterInfo);
+		Stock = BangModVanillaStock1PMesh(AssetStore.CharacterInfo);
 
 		if (Stock != none)
 		{
 			AssetStore.OwnerMesh = Stock;
 
-			if (!bXangModWarnedStock1PMesh)
+			if (!bBangModVanillaWarnedStock1PMesh)
 			{
-				bXangModWarnedStock1PMesh = true;
-				LogAlwaysInternal(self@"XangMod: 1P mesh"@AssetStore.CharacterInfo.default.OwnerMeshPath@"did not load; substituting stock"@Stock);
+				bBangModVanillaWarnedStock1PMesh = true;
+				LogAlwaysInternal(self@"BangModVanilla: 1P mesh"@AssetStore.CharacterInfo.default.OwnerMeshPath@"did not load; substituting stock"@Stock);
 			}
 		}
 	}
@@ -247,10 +247,10 @@ simulated function SetCharacterAppearance(AssetStore_AOCPawn_Character AssetStor
 		&& AssetStore.OwnerMesh != none
 		&& AssetStore.BodyMaterial != none)
 	{
-		if (AssetStore.CharacterInfo == class'XangModCharacterInfo_Agatha_Assassin'
-			|| AssetStore.CharacterInfo == class'XangModCharacterInfo_Mason_Assassin'
-			|| AssetStore.CharacterInfo == class'XangModCharacterInfo_Agatha_Ninja'
-			|| AssetStore.CharacterInfo == class'XangModCharacterInfo_Mason_Ninja')
+		if (AssetStore.CharacterInfo == class'BangModVanillaCharacterInfo_Agatha_Assassin'
+			|| AssetStore.CharacterInfo == class'BangModVanillaCharacterInfo_Mason_Assassin'
+			|| AssetStore.CharacterInfo == class'BangModVanillaCharacterInfo_Agatha_Ninja'
+			|| AssetStore.CharacterInfo == class'BangModVanillaCharacterInfo_Mason_Ninja')
 		{
 			// Ninja arms ship as a single neutral-grey slot; tint everything body.
 			for (i = 0; i < AssetStore.OwnerMesh.Materials.Length; ++i)
@@ -258,8 +258,8 @@ simulated function SetCharacterAppearance(AssetStore_AOCPawn_Character AssetStor
 				OwnerMesh.SetMaterial(i, AssetStore.BodyMaterial);
 			}
 		}
-		else if (AssetStore.CharacterInfo == class'XangModCharacterInfo_Agatha_Footman_Archer'
-			|| AssetStore.CharacterInfo == class'XangModCharacterInfo_Mason_Footman_Archer')
+		else if (AssetStore.CharacterInfo == class'BangModVanillaCharacterInfo_Agatha_Footman_Archer'
+			|| AssetStore.CharacterInfo == class'BangModVanillaCharacterInfo_Mason_Footman_Archer')
 		{
 			// Footmen 1P mesh: slot 0 is the hands (head/skin material), remaining
 			// slots are the body. Mirror the 3P convention (head on slot 0, body on
@@ -316,9 +316,9 @@ simulated function ResetBlends(optional float BlendOutTime = 0.3f, optional bool
  * WEAPON-KEYED NINJA ROLL
  *
  * The ninja skin is now a normal Man-At-Arms customization choice
- * (XangModCharacterInfo_Agatha_Ninja / _Mason_Ninja) instead of being forced
- * by the equipped primary weapon. XangModIsNinjaPrimary below is only used to
- * key the ninja-roll dodge (XangModRoll) off the same weapons, so a MAA with a
+ * (BangModVanillaCharacterInfo_Agatha_Ninja / _Mason_Ninja) instead of being forced
+ * by the equipped primary weapon. BangModVanillaIsNinjaPrimary below is only used to
+ * key the ninja-roll dodge (BangModVanillaRoll) off the same weapons, so a MAA with a
  * ninja weapon still rolls even without the ninja skin selected.
  *
  * The MAA CharacterInfo classes carry the ninja-roll anim sets (slot 19) so the
@@ -326,45 +326,45 @@ simulated function ResetBlends(optional float BlendOutTime = 0.3f, optional bool
  **************************************************************************/
 
 /** True when the equipped primary is one of the ninja weapons (keys the roll dodge). */
-simulated function bool XangModIsNinjaPrimary()
+simulated function bool BangModVanillaIsNinjaPrimary()
 {
-	return PawnInfo.myPrimary == class'XangModWeapon_Rapier'
-		|| PawnInfo.myPrimary == class'XangModWeapon_BastardSword'
-		|| PawnInfo.myPrimary == class'XangModWeapon_Kanabo'
-		|| PawnInfo.myPrimary == class'XangModWeapon_Katana'
-		|| PawnInfo.myPrimary == class'XangModWeapon_GrandHammer';
+	return PawnInfo.myPrimary == class'BangModVanillaWeapon_Rapier'
+		|| PawnInfo.myPrimary == class'BangModVanillaWeapon_BastardSword'
+		|| PawnInfo.myPrimary == class'BangModVanillaWeapon_Kanabo'
+		|| PawnInfo.myPrimary == class'BangModVanillaWeapon_Katana'
+		|| PawnInfo.myPrimary == class'BangModVanillaWeapon_GrandHammer';
 }
 
 /** True when the equipped primary is one of the footman-mesh (Footmen package) weapons. */
-simulated function bool XangModIsFootmanPrimary()
+simulated function bool BangModVanillaIsFootmanPrimary()
 {
-	return PawnInfo.myPrimary == class'XangModWeapon_Spear'
-		|| PawnInfo.myPrimary == class'XangModWeapon_Brandistock'
-		|| PawnInfo.myPrimary == class'XangModWeapon_GrandLance'
-		|| PawnInfo.myPrimary == class'XangModWeapon_MasonFlag';
+	return PawnInfo.myPrimary == class'BangModVanillaWeapon_Spear'
+		|| PawnInfo.myPrimary == class'BangModVanillaWeapon_Brandistock'
+		|| PawnInfo.myPrimary == class'BangModVanillaWeapon_GrandLance'
+		|| PawnInfo.myPrimary == class'BangModVanillaWeapon_MasonFlag';
 }
 
 /** Footman stat-family class for this pawn, or none when no footman weapon is equipped.
  *  These families are never registered in AOCGRI.FamilyInfos; they only hold stats. */
-simulated function class<XangModFamilyInfo_Archer> XangModGetFootmanStatFamilyClass()
+simulated function class<BangModVanillaFamilyInfo_Archer> BangModVanillaGetFootmanStatFamilyClass()
 {
-	if (!XangModIsFootmanPrimary())
+	if (!BangModVanillaIsFootmanPrimary())
 		return none;
 
 	if (PawnFamily != none && PawnFamily.FamilyFaction == EFAC_MASON)
-		return class'XangModFamilyInfo_Mason_FootmanArcher';
+		return class'BangModVanillaFamilyInfo_Mason_FootmanArcher';
 
-	return class'XangModFamilyInfo_Agatha_FootmanArcher';
+	return class'BangModVanillaFamilyInfo_Agatha_FootmanArcher';
 }
 
 /** Re-apply movement/stat fields from the footman family when a footman weapon is equipped,
  *  or restore the real Archer family values when no footman weapon is equipped. Called on
  *  class set and on every weapon swap so the stats always match the equipped weapon. */
-simulated function ApplyXangModFootmanStats()
+simulated function ApplyBangModVanillaFootmanStats()
 {
-	local class<XangModFamilyInfo_Archer> FootFI;
+	local class<BangModVanillaFamilyInfo_Archer> FootFI;
 
-	FootFI = XangModGetFootmanStatFamilyClass();
+	FootFI = BangModVanillaGetFootmanStatFamilyClass();
 	if (FootFI != none)
 	{
 		AirControl = FootFI.default.AirControl;
@@ -418,11 +418,11 @@ simulated function LoadCharacterAssets()
 {
 	local EAOCFaction TeamID;
 
-	if (PawnFamily != none && XangModIsFootmanPrimary())
+	if (PawnFamily != none && BangModVanillaIsFootmanPrimary())
 	{
 		TeamID = GetCustomizationFactionFromActualFaction(PawnFamily.FamilyFaction);
 		PawnInfo.myCustomization.Character =
-			class'XangModCustomizationContent'.static.GetDefaultCharacterIDForOverride(TeamID, ECLASS_Archer);
+			class'BangModVanillaCustomizationContent'.static.GetDefaultCharacterIDForOverride(TeamID, ECLASS_Archer);
 
 		// The Footmen head mesh is modelled bare; a saved Archer helmet would sit on
 		// top of it (and resolve against the Archer helmet list, picking an unrelated

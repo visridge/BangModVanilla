@@ -1,5 +1,5 @@
-// XangMod - AdminCommands.uci
-// Included via XangModPlayerController.uci. Vars live in PC/Vars.uci; DefaultProperties in PC/Effects.uci (last).
+// BangModVanilla - AdminCommands.uci
+// Included via BangModVanillaPlayerController.uci. Vars live in PC/Vars.uci; DefaultProperties in PC/Effects.uci (last).
 reliable server function bool IsAdmin() {
 	return WorldInfo.Game.AccessControl.IsAdmin(self) || WorldInfo.NetMode == NM_Standalone;
 }
@@ -137,29 +137,29 @@ exec function AdminRConStatus() {
 
 // Listener state, every RCON session and recent rejected logins, to this admin's console.
 reliable server function ServerAdminRConStatus() {
-	local XangModRCon RCon;
+	local BangModVanillaRCon RCon;
 	local array<string> Lines;
 	local string Line;
 
 	if (!PlayerReplicationInfo.bAdmin)
 		return;
 
-	foreach WorldInfo.AllActors(class'XangModRCon', RCon) {
-		if (XangModRConSession(RCon) == none) {
-			RCon.XangModStatusLines(Lines);
+	foreach WorldInfo.AllActors(class'BangModVanillaRCon', RCon) {
+		if (BangModVanillaRConSession(RCon) == none) {
+			RCon.BangModVanillaStatusLines(Lines);
 			break;
 		}
 	}
 	if (Lines.Length == 0)
-		Lines.AddItem("No XangMod RCON listener on this server.");
+		Lines.AddItem("No BangModVanilla RCON listener on this server.");
 
 	foreach Lines(Line)
 		ClientDisplayConsoleMessage(Line);
 }
 
 // Timer set by Game/Match.uci GenericPlayerInitialization, once per player per map.
-function XangModShowRankedHint() {
-	ReceiveChatMessage("Type !rankedhelp to see ranked commands.", EFAC_ALL, false, true, class'XangModRanked'.const.CHAT_COLOUR, false);
+function BangModVanillaShowRankedHint() {
+	ReceiveChatMessage("Type !rankedhelp to see ranked commands.", EFAC_ALL, false, true, class'BangModVanillaRanked'.const.CHAT_COLOUR, false);
 }
 
 // Ranked lives on LTS only; every other mode just answers with a message.
@@ -168,10 +168,10 @@ exec function VoteRanked() {
 }
 
 reliable server function ServerVoteRanked() {
-	if (XangModLTS(WorldInfo.Game) != none)
-		XangModLTS(WorldInfo.Game).InitiateVoteRanked(self, true);
-	else if (XangModTO(WorldInfo.Game) != none)
-		XangModTO(WorldInfo.Game).InitiateVoteRanked(self, true);
+	if (BangModVanillaLTS(WorldInfo.Game) != none)
+		BangModVanillaLTS(WorldInfo.Game).InitiateVoteRanked(self, true);
+	else if (BangModVanillaTO(WorldInfo.Game) != none)
+		BangModVanillaTO(WorldInfo.Game).InitiateVoteRanked(self, true);
 	else
 		ClientDisplayConsoleMessage("Ranked mode is only available on LTS and TO maps.");
 }
@@ -181,10 +181,10 @@ exec function VoteUnranked() {
 }
 
 reliable server function ServerVoteUnranked() {
-	if (XangModLTS(WorldInfo.Game) != none)
-		XangModLTS(WorldInfo.Game).InitiateVoteRanked(self, false);
-	else if (XangModTO(WorldInfo.Game) != none)
-		XangModTO(WorldInfo.Game).InitiateVoteRanked(self, false);
+	if (BangModVanillaLTS(WorldInfo.Game) != none)
+		BangModVanillaLTS(WorldInfo.Game).InitiateVoteRanked(self, false);
+	else if (BangModVanillaTO(WorldInfo.Game) != none)
+		BangModVanillaTO(WorldInfo.Game).InitiateVoteRanked(self, false);
 	else
 		ClientDisplayConsoleMessage("Ranked mode is only available on LTS and TO maps.");
 }
@@ -204,16 +204,16 @@ reliable server function ServerAdminStartMatch() {
 	if (!PlayerReplicationInfo.bAdmin)
 		return;
 
-	if (XangModLTS(WorldInfo.Game) != none)
-		Problem = XangModLTS(WorldInfo.Game).AdminStartRankedMatch();
-	else if (XangModTO(WorldInfo.Game) != none)
-		Problem = XangModTO(WorldInfo.Game).AdminStartRankedMatch();
+	if (BangModVanillaLTS(WorldInfo.Game) != none)
+		Problem = BangModVanillaLTS(WorldInfo.Game).AdminStartRankedMatch();
+	else if (BangModVanillaTO(WorldInfo.Game) != none)
+		Problem = BangModVanillaTO(WorldInfo.Game).AdminStartRankedMatch();
 	else
 		Problem = "Ranked mode is only available on LTS and TO maps.";
 
 	if (Problem != "") {
 		ClientDisplayConsoleMessage(Problem);
-		ReceiveChatMessage(Problem, EFAC_ALL, false, true, class'XangModRanked'.const.CHAT_COLOUR, false);
+		ReceiveChatMessage(Problem, EFAC_ALL, false, true, class'BangModVanillaRanked'.const.CHAT_COLOUR, false);
 		return;
 	}
 	S_AdminBroadcastMessage("AdminStartMatch");
@@ -234,10 +234,10 @@ reliable server function ServerAdminTerminateMatch() {
 	if (!PlayerReplicationInfo.bAdmin)
 		return;
 
-	if (XangModLTS(WorldInfo.Game) != none)
-		bTerminated = XangModLTS(WorldInfo.Game).TerminateRankedMatch();
-	else if (XangModTO(WorldInfo.Game) != none)
-		bTerminated = XangModTO(WorldInfo.Game).TerminateRankedMatch();
+	if (BangModVanillaLTS(WorldInfo.Game) != none)
+		bTerminated = BangModVanillaLTS(WorldInfo.Game).TerminateRankedMatch();
+	else if (BangModVanillaTO(WorldInfo.Game) != none)
+		bTerminated = BangModVanillaTO(WorldInfo.Game).TerminateRankedMatch();
 
 	if (!bTerminated) {
 		ClientDisplayConsoleMessage("There is no ranked match in progress to terminate.");
@@ -246,7 +246,7 @@ reliable server function ServerAdminTerminateMatch() {
 	S_AdminBroadcastMessage("AdminTerminateMatch");
 }
 
-// ---- Ranked admin commands (GameInfo-side work lives in XangModRankedHooks.uci) ----
+// ---- Ranked admin commands (GameInfo-side work lives in BangModVanillaRankedHooks.uci) ----
 
 exec function RankedMode(bool bEnable) {
 	if (!PlayerReplicationInfo.bAdmin) {
@@ -259,10 +259,10 @@ exec function RankedMode(bool bEnable) {
 reliable server function ServerRankedMode(bool bEnable) {
 	if (!PlayerReplicationInfo.bAdmin)
 		return;
-	if (XangModLTS(WorldInfo.Game) != none)
-		XangModLTS(WorldInfo.Game).SetRankedMode(bEnable);
-	else if (XangModTO(WorldInfo.Game) != none)
-		XangModTO(WorldInfo.Game).SetRankedMode(bEnable);
+	if (BangModVanillaLTS(WorldInfo.Game) != none)
+		BangModVanillaLTS(WorldInfo.Game).SetRankedMode(bEnable);
+	else if (BangModVanillaTO(WorldInfo.Game) != none)
+		BangModVanillaTO(WorldInfo.Game).SetRankedMode(bEnable);
 }
 
 exec function RankedMinTeamSize(int Size) {
@@ -276,10 +276,10 @@ exec function RankedMinTeamSize(int Size) {
 reliable server function ServerRankedMinTeamSize(int Size) {
 	if (!PlayerReplicationInfo.bAdmin)
 		return;
-	if (XangModLTS(WorldInfo.Game) != none)
-		XangModLTS(WorldInfo.Game).RankedMinTeamSize(Size);
-	else if (XangModTO(WorldInfo.Game) != none)
-		XangModTO(WorldInfo.Game).RankedMinTeamSize(Size);
+	if (BangModVanillaLTS(WorldInfo.Game) != none)
+		BangModVanillaLTS(WorldInfo.Game).RankedMinTeamSize(Size);
+	else if (BangModVanillaTO(WorldInfo.Game) != none)
+		BangModVanillaTO(WorldInfo.Game).RankedMinTeamSize(Size);
 }
 
 exec function RankedMaxTeamSize(int Size) {
@@ -293,10 +293,10 @@ exec function RankedMaxTeamSize(int Size) {
 reliable server function ServerRankedMaxTeamSize(int Size) {
 	if (!PlayerReplicationInfo.bAdmin)
 		return;
-	if (XangModLTS(WorldInfo.Game) != none)
-		XangModLTS(WorldInfo.Game).RankedMaxTeamSize(Size);
-	else if (XangModTO(WorldInfo.Game) != none)
-		XangModTO(WorldInfo.Game).RankedMaxTeamSize(Size);
+	if (BangModVanillaLTS(WorldInfo.Game) != none)
+		BangModVanillaLTS(WorldInfo.Game).RankedMaxTeamSize(Size);
+	else if (BangModVanillaTO(WorldInfo.Game) != none)
+		BangModVanillaTO(WorldInfo.Game).RankedMaxTeamSize(Size);
 }
 
 exec function RankedExtend(optional int Seconds) {
@@ -310,10 +310,10 @@ exec function RankedExtend(optional int Seconds) {
 reliable server function ServerRankedExtend(optional int Seconds) {
 	if (!PlayerReplicationInfo.bAdmin)
 		return;
-	if (XangModLTS(WorldInfo.Game) != none)
-		XangModLTS(WorldInfo.Game).RankedExtend(Seconds);
-	else if (XangModTO(WorldInfo.Game) != none)
-		XangModTO(WorldInfo.Game).RankedExtend(Seconds);
+	if (BangModVanillaLTS(WorldInfo.Game) != none)
+		BangModVanillaLTS(WorldInfo.Game).RankedExtend(Seconds);
+	else if (BangModVanillaTO(WorldInfo.Game) != none)
+		BangModVanillaTO(WorldInfo.Game).RankedExtend(Seconds);
 }
 
 exec function RankedAbandon() {
@@ -327,10 +327,10 @@ exec function RankedAbandon() {
 reliable server function ServerRankedAbandon() {
 	if (!PlayerReplicationInfo.bAdmin)
 		return;
-	if (XangModLTS(WorldInfo.Game) != none)
-		XangModLTS(WorldInfo.Game).RankedAbandon();
-	else if (XangModTO(WorldInfo.Game) != none)
-		XangModTO(WorldInfo.Game).RankedAbandon();
+	if (BangModVanillaLTS(WorldInfo.Game) != none)
+		BangModVanillaLTS(WorldInfo.Game).RankedAbandon();
+	else if (BangModVanillaTO(WorldInfo.Game) != none)
+		BangModVanillaTO(WorldInfo.Game).RankedAbandon();
 }
 
 exec function RankedPing() {
@@ -344,10 +344,10 @@ exec function RankedPing() {
 reliable server function ServerRankedPing() {
 	if (!PlayerReplicationInfo.bAdmin)
 		return;
-	if (XangModLTS(WorldInfo.Game) != none)
-		XangModLTS(WorldInfo.Game).RankedPing();
-	else if (XangModTO(WorldInfo.Game) != none)
-		XangModTO(WorldInfo.Game).RankedPing();
+	if (BangModVanillaLTS(WorldInfo.Game) != none)
+		BangModVanillaLTS(WorldInfo.Game).RankedPing();
+	else if (BangModVanillaTO(WorldInfo.Game) != none)
+		BangModVanillaTO(WorldInfo.Game).RankedPing();
 }
 
 exec function AdminReadyAll() {
@@ -430,7 +430,7 @@ exec function AdminTournamentMode(optional bool bEnable = true)
 	ClientDisplayConsoleMessage("Enable: Admin TournamentMode 1");
 }
 
-// Override AdminLoginHidden to prevent silent admin logins on XangMod servers.
+// Override AdminLoginHidden to prevent silent admin logins on BangModVanilla servers.
 // Redirects to the standard AdminLogin which broadcasts to all players.
 exec function AdminLoginHidden(string Password)
 {
@@ -458,10 +458,10 @@ reliable server function S_AdminEnableGoFast(bool bEnable) {
 
 	if (!IsAdmin())
 		return;
-	class'XangModAOCDuelPlayerController'.default.bXangModGoFast = bEnable;
-	class'XangModAOCDuelPlayerController'.static.StaticSaveConfig();
+	class'BangModVanillaAOCDuelPlayerController'.default.bBangModVanillaGoFast = bEnable;
+	class'BangModVanillaAOCDuelPlayerController'.static.StaticSaveConfig();
 	foreach WorldInfo.AllActors(class'AOCFamilyInfo', F)
-		class'XangModAdminActions'.static.ApplyGoFast(F);
+		class'BangModVanillaAdminActions'.static.ApplyGoFast(F);
 	if (bEnable)
 		S_AdminBroadcastMessage("GoFast ENABLED - faster sprint ramp-up (MAA -50%, Vanguard -35%, Knight -20%)", false);
 	else
@@ -486,14 +486,14 @@ reliable server function S_AdminSetCollisionRadius(float NewRadius) {
 	// Clamp to a sane range to prevent griefing (1 to 200)
 	NewRadius = FClamp(NewRadius, 1.0, 200.0);
 
-	class'XangModAOCDuelPlayerController'.default.fXangModCollisionRadius = NewRadius;
-	class'XangModAOCDuelPlayerController'.static.StaticSaveConfig();
+	class'BangModVanillaAOCDuelPlayerController'.default.fBangModVanillaCollisionRadius = NewRadius;
+	class'BangModVanillaAOCDuelPlayerController'.static.StaticSaveConfig();
 
 	// Sync all connected players
 	foreach WorldInfo.AllControllers(class'AOCPlayerController', PC)
 	{
-		if (XangModAOCDuelPlayerController(PC) != none)
-			XangModAOCDuelPlayerController(PC).ClientSyncCollisionRadius(NewRadius);
+		if (BangModVanillaAOCDuelPlayerController(PC) != none)
+			BangModVanillaAOCDuelPlayerController(PC).ClientSyncCollisionRadius(NewRadius);
 	}
 
 	S_AdminBroadcastMessage("Collision bubble radius set to" @ NewRadius @ "(respawn to apply)", false);
@@ -510,12 +510,12 @@ exec function AdminCEAutoskip()
 }
 
 reliable server function S_AdminCEAutoskip() {
-	local XangModTO TOGame;
+	local BangModVanillaTO TOGame;
 
 	if (!IsAdmin())
 		return;
 
-	TOGame = XangModTO(WorldInfo.Game);
+	TOGame = BangModVanillaTO(WorldInfo.Game);
 	if (TOGame == none) {
 		ClientDisplayConsoleMessage("CE Autoskip only works in Team Objective.");
 		return;
@@ -540,12 +540,12 @@ exec function AdminAIKing(optional string OnOff)
 }
 
 reliable server function S_AdminAIKing(string OnOff) {
-	local XangModTO TOGame;
+	local BangModVanillaTO TOGame;
 	local bool bOn;
 
 	if (!IsAdmin())
 		return;
-	TOGame = XangModTO(WorldInfo.Game);
+	TOGame = BangModVanillaTO(WorldInfo.Game);
 	if (TOGame == none) {
 		ClientDisplayConsoleMessage("Bot King only applies to Team Objective.");
 		return;
@@ -555,8 +555,8 @@ reliable server function S_AdminAIKing(string OnOff) {
 	else if (OnOff ~= "off" || OnOff ~= "0" || OnOff ~= "false")
 		bOn = false;
 	else
-		bOn = !TOGame.XangModUsesAIKing();
-	S_AdminBroadcastMessage(TOGame.XangModSetAIKing(bOn), false);
+		bOn = !TOGame.BangModVanillaUsesAIKing();
+	S_AdminBroadcastMessage(TOGame.BangModVanillaSetAIKing(bOn), false);
 }
 
 // Completes the current TO stage; the map advances itself and the skipped stage awards no bonus time.
@@ -570,18 +570,18 @@ exec function AdminSkipObjective()
 }
 
 reliable server function S_AdminSkipObjective() {
-	local XangModTO TOGame;
+	local BangModVanillaTO TOGame;
 
 	if (!IsAdmin())
 		return;
 
-	TOGame = XangModTO(WorldInfo.Game);
+	TOGame = BangModVanillaTO(WorldInfo.Game);
 	if (TOGame == none) {
 		ClientDisplayConsoleMessage("Objective skip only works in Team Objective.");
 		return;
 	}
 
-	if (TOGame.XangModSkipObjective())
+	if (TOGame.BangModVanillaSkipObjective())
 		S_AdminBroadcastMessage("skipped the current objective");
 	else
 		ClientDisplayConsoleMessage("No active objective to skip.");
@@ -598,21 +598,21 @@ exec function AdminCompForestAlternatingSpawns(optional bool bEnable = true)
 
 reliable server function S_AdminCompForestAlternatingSpawns(bool bEnable)
 {
-	local XangModTO TOGame;
+	local BangModVanillaTO TOGame;
 
 	if (!IsAdmin())
 		return;
 
-	TOGame = XangModTO(WorldInfo.Game);
-	if (TOGame == none || !TOGame.XangModIsCompForestTO()) {
+	TOGame = BangModVanillaTO(WorldInfo.Game);
+	if (TOGame == none || !TOGame.BangModVanillaIsCompForestTO()) {
 		ClientDisplayConsoleMessage("CompForest alternating spawns only work on AOCTO-CompForest_p.");
 		return;
 	}
 
 	TOGame.bEnableCompForestAlternatingSpawns = bEnable;
-	TOGame.iXangModCompForestLastStage = -1;
-	TOGame.iXangModCompForestLastAgathaGroup = -1;
-	TOGame.iXangModCompForestLastMasonGroup = -1;
+	TOGame.iBangModVanillaCompForestLastStage = -1;
+	TOGame.iBangModVanillaCompForestLastAgathaGroup = -1;
+	TOGame.iBangModVanillaCompForestLastMasonGroup = -1;
 
 	if (bEnable)
 		S_AdminBroadcastMessage("CompForest alternating spawns ENABLED", false);
@@ -699,12 +699,12 @@ exec function CauseEvent(optional name EventName) {
 }
 
 // A live ranked match (LTS or TO) restarts its own map; block admin map changes while it is on.
-function bool XangModRankedBlockingMapChange()
+function bool BangModVanillaRankedBlockingMapChange()
 {
-	if (XangModLTS(WorldInfo.Game) != none)
-		return XangModLTS(WorldInfo.Game).RankedBlocksMapChange(self);
-	if (XangModTO(WorldInfo.Game) != none)
-		return XangModTO(WorldInfo.Game).RankedBlocksMapChange(self);
+	if (BangModVanillaLTS(WorldInfo.Game) != none)
+		return BangModVanillaLTS(WorldInfo.Game).RankedBlocksMapChange(self);
+	if (BangModVanillaTO(WorldInfo.Game) != none)
+		return BangModVanillaTO(WorldInfo.Game).RankedBlocksMapChange(self);
 	return false;
 }
 
@@ -713,7 +713,7 @@ function bool XangModRankedBlockingMapChange()
 reliable server function ServerChangeMap(string URL)
 {
 	// Covers AdminChangeMap and every AdminGoto*. A live ranked match restarts the map itself.
-	if (XangModRankedBlockingMapChange())
+	if (BangModVanillaRankedBlockingMapChange())
 		return;
 
 	if (IsAdmin() && AOCGame(WorldInfo.Game).MapExists(URL))
@@ -735,7 +735,7 @@ reliable server function S_AdminRestartMap()
 {
 	if (!IsAdmin())
 		return;
-	if (XangModRankedBlockingMapChange())
+	if (BangModVanillaRankedBlockingMapChange())
 		return;
 	S_AdminBroadcastMessage("restarted the map");
 	WorldInfo.ServerTravel("?restart", false);

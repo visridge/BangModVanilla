@@ -1,5 +1,5 @@
-// XangMod - Vars.uci
-// Included via XangModPawn.uci. Vars live in Pawn/Vars.uci; DefaultProperties in Pawn/Camera.uci (last).
+// BangModVanilla - Vars.uci
+// Included via BangModVanillaPawn.uci. Vars live in Pawn/Vars.uci; DefaultProperties in Pawn/Camera.uci (last).
 var float fLastParryTimeSeconds;                // The game time at which the pawn last parried
 var float fSuccessiveParryStaminaReward;        // Flat stamina reward for parrying within successive parry threshold
 var float fSuccessiveParryThresholdSeconds;     // The maximum time in seconds after the pawn's last parry that they are eligible for reward
@@ -17,15 +17,15 @@ var float fRiposteGracePeriod;                  // Legacy flinch grace-period fi
 // var bool bWasBastardSwordSprinting;
 var bool bKanaboExtraJumpUsed;
 var CylinderComponent OuterCylinderComp; // Reference to the OuterCylinder component (player collision bubble)
-var bool bXangModWarnedNoOwnerMesh;      // one-shot log guard: 1P -> 3P camera socket fallback
-var bool bXangModWarnedNoCameraSocket;   // one-shot log guard: neither mesh usable
-var bool bXangModWarnedStock1PMesh;      // one-shot log guard: stock 1P mesh substituted
-var float fXangModBrainCheckAt;          // AI pawns: next check for an XangModBotBrain (server)
+var bool bBangModVanillaWarnedNoOwnerMesh;      // one-shot log guard: 1P -> 3P camera socket fallback
+var bool bBangModVanillaWarnedNoCameraSocket;   // one-shot log guard: neither mesh usable
+var bool bBangModVanillaWarnedStock1PMesh;      // one-shot log guard: stock 1P mesh substituted
+var float fBangModVanillaBrainCheckAt;          // AI pawns: next check for an BangModVanillaBotBrain (server)
 
-// (Deferred-hit state removed — replaced by the PendingHits hold model in XangModPawn.uc)
+// (Deferred-hit state removed — replaced by the PendingHits hold model in BangModVanillaPawn.uc)
 
-// XANGMOD: Client-timestamp hit-trade priority state/tunables (see RecentIncomingHit in
-// XangModPawn.uc and the helpers/arbitration further down).
+// BangModVanilla: Client-timestamp hit-trade priority state/tunables (see RecentIncomingHit in
+// BangModVanillaPawn.uc and the helpers/arbitration further down).
 var float fClientClockOffset;          // EMA of (serverTime - oneWayPing - clientStamp)
 var bool  bClientClockOffsetInit;      // has the offset EMA been seeded yet?
 var float fPendingHitClientTime;       // last client hit-moment stamp received (their clock); consumed by AttackOtherPawn

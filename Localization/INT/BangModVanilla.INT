@@ -1,0 +1,29 @@
+[ChatMessages]
+Welcome=Welcome to Xang Mod!
+
+[BangModVanillaWeapon_Warbow]
+WeaponName=Warbow
+
+[BangModVanillaWeapon_Longbow]
+WeaponName=Longbow
+
+[BangModVanillaWeapon_Shortbow]
+WeaponName=Shortbow
+
+[BangModVanillaWeapon_HeavyCrossbow]
+WeaponName=Heavy Crossbow
+
+[BangModVanillaWeapon_LightCrossbow]
+WeaponName=Light Crossbow
+
+[BangModVanillaWeapon_Crossbow]
+WeaponName=Crossbow
+
+[BangModVanillaWeapon_HeavyCrossbow]
+WeaponName=Heavy Crossbow
+
+[BangModVanillaWeapon_Sling]
+WeaponName=Sling
+
+[BangModVanillaWeapon_ProjWarbowArrow]
+WeaponName=Warbow Arrow

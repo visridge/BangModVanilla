@@ -1,5 +1,5 @@
-// XangMod - Animation.uci
-// Included via XangModPawn.uci. Vars live in Pawn/Vars.uci; DefaultProperties in Pawn/Camera.uci (last).
+// BangModVanilla - Animation.uci
+// Included via BangModVanillaPawn.uci. Vars live in Pawn/Vars.uci; DefaultProperties in Pawn/Camera.uci (last).
 /* 
 simulated function ReplicateCompressedAnimation(AnimationInfo AnimInfo, EWeaponState State, int Index, optional bool ExtraFlag = false, optional bool bLowerBody = false, optional bool bStartTimer = true, optional bool bStopPreviousTimer = true, optional float StartTimeMod = 1.f)
 {	

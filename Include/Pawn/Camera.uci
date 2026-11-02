@@ -1,17 +1,17 @@
-// XangMod - Camera.uci
-// Included via XangModPawn.uci. Vars live in Pawn/Vars.uci; DefaultProperties in Pawn/Camera.uci (last).
+// BangModVanilla - Camera.uci
+// Included via BangModVanillaPawn.uci. Vars live in Pawn/Vars.uci; DefaultProperties in Pawn/Camera.uci (last).
 simulated function SetThirdPersonCamera(bool bNewBehindView)
 {
 	super.SetThirdPersonCamera(bNewBehindView);
 
-	if (XangModWeaponAttachment_DualBucklers(CurrentWeaponAttachment) != none)
+	if (BangModVanillaWeaponAttachment_DualBucklers(CurrentWeaponAttachment) != none)
 	{
-		XangModWeaponAttachment_DualBucklers(CurrentWeaponAttachment).UpdateLeftHandVisibility(bNewBehindView);
+		BangModVanillaWeaponAttachment_DualBucklers(CurrentWeaponAttachment).UpdateLeftHandVisibility(bNewBehindView);
 	}
 
-	if (XangModWeaponAttachment_WarHammer(CurrentWeaponAttachment) != none)
+	if (BangModVanillaWeaponAttachment_WarHammer(CurrentWeaponAttachment) != none)
 	{
-		XangModWeaponAttachment_WarHammer(CurrentWeaponAttachment).UpdateLeftHandVisibility(bNewBehindView);
+		BangModVanillaWeaponAttachment_WarHammer(CurrentWeaponAttachment).UpdateLeftHandVisibility(bNewBehindView);
 	}
 }
 
@@ -61,7 +61,7 @@ simulated function SetThirdPersonCamera(bool bNewBehindView)
  * OwnerTopHalfSlot, OwnerBlendAnimationListNode and friends. There is no other
  * call site that assigns those.
  */
-simulated function bool XangModEnsureOwnerMesh()
+simulated function bool BangModVanillaEnsureOwnerMesh()
 {
 	local class<AOCCharacterInfo> Info;
 	local AnimSet TempSet;
@@ -123,30 +123,30 @@ simulated function bool XangModEnsureOwnerMesh()
 		// the prevent_direct_calls define), so it fails to compile. LogAlwaysInternal is
 		// the public equivalent and is what AOC itself uses. Every other log macro in
 		// this repo is commented out for the same reason.
-		LogAlwaysInternal(self@"XangModEnsureOwnerMesh: anim tree did not initialise (OwnerAimNode="$OwnerAimNode$", OwnerBlendAnimationListNode="$OwnerBlendAnimationListNode$") -- reverting");
+		LogAlwaysInternal(self@"BangModVanillaEnsureOwnerMesh: anim tree did not initialise (OwnerAimNode="$OwnerAimNode$", OwnerBlendAnimationListNode="$OwnerBlendAnimationListNode$") -- reverting");
 		DetachComponent(OwnerMesh);
 		OwnerMesh = none;
 		return false;
 	}
 
-	LogAlwaysInternal(self@"XangModEnsureOwnerMesh: rebuilt 1P mesh"@CharacterAssetStore.OwnerMesh);
+	LogAlwaysInternal(self@"BangModVanillaEnsureOwnerMesh: rebuilt 1P mesh"@CharacterAssetStore.OwnerMesh);
 	return true;
 }
 
 /**
  * Rebuild the 1P mesh as soon as a local spectator starts viewing this pawn, so it
- * exists by the time XangModApplyFPObserve() runs on the controller side.
+ * exists by the time BangModVanillaApplyFPObserve() runs on the controller side.
  *
  * BecomeViewTarget fires from the native SetViewTarget inside
  * PlayerController.ClientSetViewTarget, which is exactly one step ahead of where
- * XangModPlayerController applies the perspective.
+ * BangModVanillaPlayerController applies the perspective.
  */
 simulated event BecomeViewTarget(PlayerController PC)
 {
 	if (PC != none && PC.IsLocalPlayerController()
 		&& AOCPlayerController(PC) != none && AOCPlayerController(PC).IsInState('Spectating'))
 	{
-		XangModEnsureOwnerMesh();
+		BangModVanillaEnsureOwnerMesh();
 	}
 
 	super.BecomeViewTarget(PC);
@@ -173,7 +173,7 @@ simulated event BecomeViewTarget(PlayerController PC)
  * hundreds of metres away -- the pawn plays normally underneath while the screen
  * shows a fixed corner of the map.
  *
- * This bit XangMod badly: several classes ship OwnerMeshPaths whose package was
+ * This bit BangModVanilla badly: several classes ship OwnerMeshPaths whose package was
  * not installed, and content packages live in the DLC folder, which a script cook
  * wipes. Rather than depend on every 1P asset always being present, degrade:
  *
@@ -188,7 +188,7 @@ simulated event BecomeViewTarget(PlayerController PC)
  **************************************************************************/
 
 /** True when this component can actually resolve CameraSocket. */
-simulated function bool XangModCanUseCameraSocket(SkeletalMeshComponent SMC)
+simulated function bool BangModVanillaCanUseCameraSocket(SkeletalMeshComponent SMC)
 {
 	return SMC != none
 		&& SMC.SkeletalMesh != none
@@ -206,7 +206,7 @@ simulated function GetCameraSocketLocationAndRotation(bool bFirstPerson, out vec
 	// bone is missing, spacebases not yet valid -- leaves the caller's values
 	// untouched. That is the whole bug: stale values read as a frozen camera. Pre-fill
 	// them and a silent bail degrades to "camera at the pawn's eyes" instead.
-	XangModEyeViewPoint(CameraLocation, CameraRotation);
+	BangModVanillaEyeViewPoint(CameraLocation, CameraRotation);
 
 	if (bFirstPerson)
 		Wanted = OwnerMesh;
@@ -214,7 +214,7 @@ simulated function GetCameraSocketLocationAndRotation(bool bFirstPerson, out vec
 		Wanted = Mesh;
 
 	// Normal path: the mesh that was asked for can resolve the socket.
-	if (XangModCanUseCameraSocket(Wanted))
+	if (BangModVanillaCanUseCameraSocket(Wanted))
 	{
 		super.GetCameraSocketLocationAndRotation(bFirstPerson, CameraLocation, CameraRotation);
 		return;
@@ -223,12 +223,12 @@ simulated function GetCameraSocketLocationAndRotation(bool bFirstPerson, out vec
 	// First person asked for but no usable 1P mesh -- borrow the 3P one. It is
 	// animated, so aim pitch still works. AOCPlayerCamera zeroes roll for us on the
 	// first-person path, so the 3P mesh's lean does not leak through.
-	if (bFirstPerson && XangModCanUseCameraSocket(Mesh))
+	if (bFirstPerson && BangModVanillaCanUseCameraSocket(Mesh))
 	{
-		if (!bXangModWarnedNoOwnerMesh)
+		if (!bBangModVanillaWarnedNoOwnerMesh)
 		{
-			bXangModWarnedNoOwnerMesh = true;
-			LogAlwaysInternal(self@"XangMod: no usable 1P camera mesh (OwnerMesh="$OwnerMesh$"), falling back to the 3P camera socket.");
+			bBangModVanillaWarnedNoOwnerMesh = true;
+			LogAlwaysInternal(self@"BangModVanilla: no usable 1P camera mesh (OwnerMesh="$OwnerMesh$"), falling back to the 3P camera socket.");
 		}
 
 		super.GetCameraSocketLocationAndRotation(false, CameraLocation, CameraRotation);
@@ -241,20 +241,20 @@ simulated function GetCameraSocketLocationAndRotation(bool bFirstPerson, out vec
 		//
 		// Deliberately NOT GetBaseAimRotation(): it calls Controller.GetPlayerViewPoint,
 		// which comes straight back here via AOCPlayerCamera.UpdateCamera.
-		XangModAimRotation(CameraRotation);
+		BangModVanillaAimRotation(CameraRotation);
 		return;
 	}
 
 	// Neither mesh is usable. The seed above already holds the eye view point.
-	if (!bXangModWarnedNoCameraSocket)
+	if (!bBangModVanillaWarnedNoCameraSocket)
 	{
-		bXangModWarnedNoCameraSocket = true;
-		LogAlwaysInternal(self@"XangMod: no usable camera socket on either mesh; using the pawn's eye position.");
+		bBangModVanillaWarnedNoCameraSocket = true;
+		LogAlwaysInternal(self@"BangModVanilla: no usable camera socket on either mesh; using the pawn's eye position.");
 	}
 }
 
 /** Where this pawn is looking, without re-entering the camera path. */
-simulated function XangModAimRotation(out rotator OutRot)
+simulated function BangModVanillaAimRotation(out rotator OutRot)
 {
 	if (Controller != none)
 	{
@@ -270,17 +270,17 @@ simulated function XangModAimRotation(out rotator OutRot)
 }
 
 /** Last-resort view point: the pawn's own eyes. Never leaves the caller holding stale values. */
-simulated function XangModEyeViewPoint(out vector OutLoc, out rotator OutRot)
+simulated function BangModVanillaEyeViewPoint(out vector OutLoc, out rotator OutRot)
 {
 	OutLoc = Location;
 	OutLoc.Z += EyeHeight;
-	XangModAimRotation(OutRot);
+	BangModVanillaAimRotation(OutRot);
 }
 
 /* ************************************************************************
  * STOCK 1P MESH SUBSTITUTION
  *
- * Several XangMod classes set OwnerMeshPath to an object in a content package that
+ * Several BangModVanilla classes set OwnerMeshPath to an object in a content package that
  * is not installed at runtime, so CharacterAssetStore.OwnerMesh comes back none and
  * the player has no first-person arms at all.
  *
@@ -329,7 +329,7 @@ DefaultProperties
 	// Netcode optimization: 120Hz server->client pawn updates (matches server tickrate and ReplicateMove rate)
 	NetUpdateFrequency=120
 
-	CustomizationClass=class'XangModCustomization'
+	CustomizationClass=class'BangModVanillaCustomization'
 
 	OuterCylinderComp=OuterCylinder
 
